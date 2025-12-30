@@ -146,7 +146,6 @@ def reconstruct(
 
 if __name__ == "__main__":
     app()
-# TODO: move to new repo
 # TODO: add github release action and checksum
 # TODO: release on PyPI w name kintsugi alt
 # TODO: message PyPi user
