@@ -1,0 +1,27 @@
+[project]
+name = "cli"
+version = "0.1.0"
+description = "A command-line interface application."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "hdwallet>=3.6.1",
+    "mnemonic>=0.21",
+    "requests>=2.32.5",
+    "slip39>=14.0.2",
+    "typer>=0.20.1",
+]
+
+[dependency-groups]
+dev = ["pytest", "pytest-xdist", "pytest-cov", "nuitka", "ordered-set"]
+
+[tool.pytest.ini_options]
+addopts = "-n auto"
+
+[tool.coverage.run]
+source = ["."]
+omit = ["test_*.py", "conftest.py", ".venv/*", "build/*"]
+
+[tool.coverage.report]
+fail_under = 90
+show_missing = true
