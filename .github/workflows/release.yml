@@ -1,0 +1,130 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build-onefile:
+    name: Build Onefile (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            artifact_name: kintsukuroi-linux-onefile
+            binary_path: cli.dist/kintsukuroi
+          - os: macos-latest
+            artifact_name: kintsukuroi-macos-onefile
+            binary_path: cli.dist/kintsukuroi
+          - os: windows-latest
+            artifact_name: kintsukuroi-windows-onefile.exe
+            binary_path: cli.dist/kintsukuroi.exe
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+    
+    - name: Build onefile binary
+      env:
+        MODE: onefile
+        CI: true
+      run: |
+        chmod +x build.sh
+        ./build.sh
+      shell: bash
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.artifact_name }}
+        path: ${{ matrix.binary_path }}
+        if-no-files-found: error
+
+  build-standalone:
+    name: Build Standalone (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            artifact_name: kintsukuroi-linux-standalone.tar.gz
+            archive_cmd: tar -czf kintsukuroi-linux-standalone.tar.gz cli.dist/
+          - os: macos-latest
+            artifact_name: kintsukuroi-macos-standalone.tar.gz
+            archive_cmd: tar -czf kintsukuroi-macos-standalone.tar.gz cli.dist/
+          - os: windows-latest
+            artifact_name: kintsukuroi-windows-standalone.tar.gz
+            archive_cmd: tar -czf kintsukuroi-windows-standalone.tar.gz cli.dist/
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+    
+    - name: Build standalone distribution
+      env:
+        MODE: standalone
+        CI: true
+      run: |
+        chmod +x build.sh
+        ./build.sh
+      shell: bash
+    
+    - name: Create archive
+      run: ${{ matrix.archive_cmd }}
+      shell: bash
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.artifact_name }}
+        path: ${{ matrix.artifact_name }}
+        if-no-files-found: error
+
+  create-release:
+    name: Create GitHub Release
+    needs: [build-onefile, build-standalone]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+    
+    - name: Prepare release assets
+      run: |
+        mkdir -p release-assets
+        find artifacts -type f -exec cp {} release-assets/ \;
+        ls -lah release-assets/
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: release-assets/*
+        generate_release_notes: true
+        draft: false
+        prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
