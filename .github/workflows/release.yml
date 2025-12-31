@@ -14,14 +14,14 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
         include:
           - os: ubuntu-latest
-            artifact_name: kintsukuroi-linux-onefile
-            binary_path: cli.dist/kintsukuroi
+            artifact_suffix: linux-onefile
+            binary_name: ''
           - os: macos-latest
-            artifact_name: kintsukuroi-macos-onefile
-            binary_path: cli.dist/kintsukuroi
+            artifact_suffix: macos-onefile
+            binary_name: ''
           - os: windows-latest
-            artifact_name: kintsukuroi-windows-onefile.exe
-            binary_path: cli.dist/kintsukuroi.exe
+            artifact_suffix: windows-onefile.exe
+            binary_name: .exe
     
     steps:
     - uses: actions/checkout@v4
@@ -46,8 +46,8 @@ jobs:
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ matrix.artifact_name }}
-        path: ${{ matrix.binary_path }}
+        name: ${{ github.event.repository.name }}-${{ matrix.artifact_suffix }}
+        path: cli.dist/${{ github.event.repository.name }}${{ matrix.binary_name }}
         if-no-files-found: error
 
   build-standalone:
@@ -58,14 +58,11 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
         include:
           - os: ubuntu-latest
-            artifact_name: kintsukuroi-linux-standalone.tar.gz
-            archive_cmd: tar -czf kintsukuroi-linux-standalone.tar.gz cli.dist/
+            platform: linux
           - os: macos-latest
-            artifact_name: kintsukuroi-macos-standalone.tar.gz
-            archive_cmd: tar -czf kintsukuroi-macos-standalone.tar.gz cli.dist/
+            platform: macos
           - os: windows-latest
-            artifact_name: kintsukuroi-windows-standalone.tar.gz
-            archive_cmd: tar -czf kintsukuroi-windows-standalone.tar.gz cli.dist/
+            platform: windows
     
     steps:
     - uses: actions/checkout@v4
@@ -88,14 +85,16 @@ jobs:
       shell: bash
     
     - name: Create archive
-      run: ${{ matrix.archive_cmd }}
+      run: |
+        REPO_NAME=$(basename "$GITHUB_REPOSITORY")
+        tar -czf "${REPO_NAME}-${{ matrix.platform }}-standalone.tar.gz" cli.dist/
       shell: bash
     
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ matrix.artifact_name }}
-        path: ${{ matrix.artifact_name }}
+        name: ${{ github.event.repository.name }}-${{ matrix.platform }}-standalone.tar.gz
+        path: ${{ github.event.repository.name }}-${{ matrix.platform }}-standalone.tar.gz
         if-no-files-found: error
 
   create-release:

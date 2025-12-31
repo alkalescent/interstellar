@@ -1,12 +1,12 @@
 [project]
-name = "kintsukuroi"
+name = "interstellar"
 version = "0.1.0"
 description = "A command-line tool for managing cryptocurrency mnemonics using BIP39 and SLIP39 standards"
 readme = "README.md"
 requires-python = ">=3.13"
 license = {file = "LICENSE"}
 authors = [
-    {name = "kintsukuroi contributors"}
+    {name = "interstellar contributors"}
 ]
 keywords = ["cryptocurrency", "mnemonic", "bip39", "slip39", "shamir", "hdwallet"]
 classifiers = [
@@ -25,9 +25,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/alkalescent/kintsukuroi"
-Repository = "https://github.com/alkalescent/kintsukuroi"
-Issues = "https://github.com/alkalescent/kintsukuroi/issues"
+Homepage = "https://github.com/alkalescent/interstellar"
+Repository = "https://github.com/alkalescent/interstellar"
+Issues = "https://github.com/alkalescent/interstellar/issues"
 
 [dependency-groups]
 dev = ["pytest", "pytest-xdist", "pytest-cov", "nuitka", "ordered-set"]
