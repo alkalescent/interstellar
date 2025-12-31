@@ -146,6 +146,6 @@ def reconstruct(
 
 if __name__ == "__main__":
     app()
-# TODO: add github release action and checksum
+# TODO: add github workflow for testing and release with checksum
 # TODO: release on PyPI w name kintsugi alt
 # TODO: message PyPi user
