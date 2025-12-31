@@ -1,4 +1,4 @@
-# kintsukuroi
+# interstellar
 
 A command-line tool for managing cryptocurrency mnemonics using BIP39 and SLIP39 standards. This tool allows you to split, combine, and convert mnemonic phrases for secure key management.
 
