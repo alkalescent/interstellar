@@ -25,9 +25,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/suchak/kintsukuroi"
-Repository = "https://github.com/suchak/kintsukuroi"
-Issues = "https://github.com/suchak/kintsukuroi/issues"
+Homepage = "https://github.com/alkalescent/kintsukuroi"
+Repository = "https://github.com/alkalescent/kintsukuroi"
+Issues = "https://github.com/alkalescent/kintsukuroi/issues"
 
 [dependency-groups]
 dev = ["pytest", "pytest-xdist", "pytest-cov", "nuitka", "ordered-set"]
