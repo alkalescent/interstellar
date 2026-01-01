@@ -5,6 +5,11 @@ on:
     branches:
       - master
 
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write  # Required for OIDC trusted publishing to TestPyPI
+
 jobs:
   test:
     name: Run Tests
@@ -115,11 +120,9 @@ jobs:
       with:
         repository-url: https://test.pypi.org/legacy/
         skip-existing: true
-      env:
-        # Note: For TestPyPI, you can use API token or configure trusted publishing
-        # For now using skip-existing to avoid failures on re-runs
-        PYPI_TOKEN: ${{ secrets.TEST_PYPI_API_TOKEN }}
-      continue-on-error: true
+        # Uses OIDC trusted publishing - configure at:
+        # https://test.pypi.org/manage/account/publishing/
+      continue-on-error: true  # TestPyPI publishing is best-effort for PR previews
     
     - name: Comment version info on PR
       uses: actions/github-script@v7
