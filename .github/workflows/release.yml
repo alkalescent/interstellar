@@ -85,15 +85,13 @@ jobs:
       shell: bash
     
     - name: Create archive
-      run: |
-        REPO_NAME=$(basename "$GITHUB_REPOSITORY")
-        tar -czf "${REPO_NAME}-${{ matrix.platform }}-standalone.tar.gz" cli.dist/
+      run: tar -czf "${{ github.event.repository.name }}-${{ matrix.platform }}-standalone.tar.gz" cli.dist/
       shell: bash
     
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ github.event.repository.name }}-${{ matrix.platform }}-standalone.tar.gz
+        name: ${{ github.event.repository.name }}-${{ matrix.platform }}-standalone
         path: ${{ github.event.repository.name }}-${{ matrix.platform }}-standalone.tar.gz
         if-no-files-found: error
 
