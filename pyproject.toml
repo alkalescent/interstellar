@@ -29,6 +29,9 @@ Homepage = "https://github.com/alkalescent/interstellar"
 Repository = "https://github.com/alkalescent/interstellar"
 Issues = "https://github.com/alkalescent/interstellar/issues"
 
+[tool.setuptools]
+py-modules = ["cli", "tools"]
+
 [dependency-groups]
 dev = ["pytest", "pytest-xdist", "pytest-cov", "nuitka", "ordered-set"]
 
