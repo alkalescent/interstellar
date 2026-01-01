@@ -3,8 +3,7 @@ name: Test
 on:
   push:
     branches: [ master ]
-  pull_request:
-    branches: [ master ]
+  # Pull requests run tests in pr.yml workflow
 
 jobs:
   test:

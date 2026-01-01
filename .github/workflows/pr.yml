@@ -1,0 +1,150 @@
+name: Pull Request
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ['3.13']
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+      with:
+        enable-cache: true
+    
+    - name: Install dependencies
+      run: uv sync --dev
+    
+    - name: Run tests with coverage
+      run: uv run pytest --cov --cov-report=xml --cov-report=term
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      if: matrix.os == 'ubuntu-latest'
+      with:
+        files: ./coverage.xml
+        fail_ci_if_error: false
+
+  version-preview:
+    name: Version Preview & TestPyPI
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Need full history to get all commits
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+    
+    - name: Get PR labels
+      id: pr-labels
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const labels = context.payload.pull_request.labels.map(l => l.name).join(',');
+          core.setOutput('labels', labels);
+          console.log('PR Labels:', labels);
+    
+    - name: Get commit messages
+      id: commits
+      run: |
+        COMMITS=$(git log --format=%B origin/master..HEAD)
+        echo "commits<<EOF" >> $GITHUB_OUTPUT
+        echo "$COMMITS" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+    
+    - name: Determine version bump and create RC version
+      id: version
+      run: |
+        chmod +x .github/scripts/version_manager.py
+        
+        # Get current version
+        CURRENT_VERSION=$(.github/scripts/version_manager.py read)
+        echo "current=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+        
+        # Determine bump type
+        BUMP_TYPE=$(.github/scripts/version_manager.py determine "${{ steps.commits.outputs.commits }}" "${{ steps.pr-labels.outputs.labels }}")
+        echo "bump_type=$BUMP_TYPE" >> $GITHUB_OUTPUT
+        
+        # Calculate next version
+        NEXT_VERSION=$(.github/scripts/version_manager.py bump $BUMP_TYPE)
+        echo "next=$NEXT_VERSION" >> $GITHUB_OUTPUT
+        
+        # Create RC version with timestamp
+        RC_VERSION=$(.github/scripts/version_manager.py rc $NEXT_VERSION)
+        echo "rc=$RC_VERSION" >> $GITHUB_OUTPUT
+        
+        echo "Current version: $CURRENT_VERSION"
+        echo "Bump type: $BUMP_TYPE"
+        echo "Next version: $NEXT_VERSION"
+        echo "RC version: $RC_VERSION"
+    
+    - name: Update version for TestPyPI
+      run: |
+        .github/scripts/version_manager.py update "${{ steps.version.outputs.rc }}"
+        cat pyproject.toml | grep version
+    
+    - name: Build distributions
+      run: |
+        uv build --sdist
+        uv build --wheel
+    
+    - name: Publish to TestPyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        repository-url: https://test.pypi.org/legacy/
+        skip-existing: true
+      env:
+        # Note: For TestPyPI, you can use API token or configure trusted publishing
+        # For now using skip-existing to avoid failures on re-runs
+        PYPI_TOKEN: ${{ secrets.TEST_PYPI_API_TOKEN }}
+      continue-on-error: true
+    
+    - name: Comment version info on PR
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const current = '${{ steps.version.outputs.current }}';
+          const bumpType = '${{ steps.version.outputs.bump_type }}';
+          const next = '${{ steps.version.outputs.next }}';
+          const rc = '${{ steps.version.outputs.rc }}';
+          
+          const body = `## 📦 Version Preview
+          
+          - **Current version:** \`${current}\`
+          - **Bump type:** \`${bumpType}\`
+          - **Next version:** \`${next}\`
+          - **TestPyPI version:** \`${rc}\`
+          
+          When this PR is merged, version will be bumped to \`${next}\`.
+          
+          To change the bump type, add a label: \`major\`, \`minor\`, or \`patch\`
+          Or include in commit message: \`#major\`, \`#minor\`, or \`#patch\``;
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: body
+          });

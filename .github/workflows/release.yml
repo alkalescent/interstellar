@@ -2,12 +2,114 @@ name: Release
 
 on:
   push:
-    tags:
-      - 'v*.*.*'
+    branches:
+      - master
+
+permissions:
+  contents: write
+  id-token: write
 
 jobs:
+  version-and-tag:
+    name: Bump Version and Create Tag
+    runs-on: ubuntu-latest
+    outputs:
+      new_version: ${{ steps.version.outputs.new_version }}
+      tag_name: ${{ steps.version.outputs.tag_name }}
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+    
+    - name: Get commit messages
+      id: commits
+      run: |
+        COMMITS=$(git log -1 --format=%B)
+        echo "commits<<EOF" >> $GITHUB_OUTPUT
+        echo "$COMMITS" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+    
+    - name: Determine version bump
+      id: version
+      run: |
+        chmod +x .github/scripts/version_manager.py
+        
+        # Get current version
+        CURRENT_VERSION=$(.github/scripts/version_manager.py read)
+        echo "current=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+        
+        # Determine bump type from commit message
+        BUMP_TYPE=$(.github/scripts/version_manager.py determine "${{ steps.commits.outputs.commits }}" "")
+        echo "bump_type=$BUMP_TYPE" >> $GITHUB_OUTPUT
+        
+        # Calculate new version
+        NEW_VERSION=$(.github/scripts/version_manager.py bump $BUMP_TYPE)
+        echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+        echo "tag_name=v$NEW_VERSION" >> $GITHUB_OUTPUT
+        
+        echo "Current version: $CURRENT_VERSION"
+        echo "Bump type: $BUMP_TYPE"
+        echo "New version: $NEW_VERSION"
+    
+    - name: Update version in pyproject.toml
+      run: |
+        .github/scripts/version_manager.py update "${{ steps.version.outputs.new_version }}"
+        cat pyproject.toml | grep version
+    
+    - name: Commit version bump
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add pyproject.toml
+        git commit -m "Bump version to ${{ steps.version.outputs.new_version }}"
+        git push
+    
+    - name: Create and push tag
+      run: |
+        git tag "${{ steps.version.outputs.tag_name }}"
+        git push origin "${{ steps.version.outputs.tag_name }}"
+
+  publish-pypi:
+    name: Publish to PyPI
+    needs: version-and-tag
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/${{ github.event.repository.name }}
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ needs.version-and-tag.outputs.tag_name }}
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+    
+    - name: Build distributions
+      run: |
+        uv build --sdist
+        uv build --wheel
+    
+    - name: Publish to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      # Uses OIDC trusted publishing - configure at:
+      # https://pypi.org/manage/account/publishing/
+
   build-onefile:
     name: Build Onefile (${{ matrix.os }})
+    needs: version-and-tag
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -25,6 +127,8 @@ jobs:
     
     steps:
     - uses: actions/checkout@v4
+      with:
+        ref: ${{ needs.version-and-tag.outputs.tag_name }}
     
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -52,6 +156,7 @@ jobs:
 
   build-standalone:
     name: Build Standalone (${{ matrix.os }})
+    needs: version-and-tag
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -66,6 +171,8 @@ jobs:
     
     steps:
     - uses: actions/checkout@v4
+      with:
+        ref: ${{ needs.version-and-tag.outputs.tag_name }}
     
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -97,13 +204,13 @@ jobs:
 
   create-release:
     name: Create GitHub Release
-    needs: [build-onefile, build-standalone]
+    needs: [version-and-tag, build-onefile, build-standalone]
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     
     steps:
     - uses: actions/checkout@v4
+      with:
+        ref: ${{ needs.version-and-tag.outputs.tag_name }}
     
     - name: Download all artifacts
       uses: actions/download-artifact@v4
@@ -119,9 +226,8 @@ jobs:
     - name: Create Release
       uses: softprops/action-gh-release@v2
       with:
+        tag_name: ${{ needs.version-and-tag.outputs.tag_name }}
         files: release-assets/*
         generate_release_notes: true
         draft: false
-        prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        prerelease: ${{ contains(needs.version-and-tag.outputs.new_version, 'alpha') || contains(needs.version-and-tag.outputs.new_version, 'beta') || contains(needs.version-and-tag.outputs.new_version, 'rc') }}
