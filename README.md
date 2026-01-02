@@ -1,5 +1,10 @@
 # interstellar
 
+[![CI](https://github.com/alkalescent/interstellar/actions/workflows/test.yml/badge.svg)](https://github.com/alkalescent/interstellar/actions/workflows/test.yml)
+[![PyPI version](https://badge.fury.io/py/interstellar.svg)](https://pypi.org/project/interstellar/)
+[![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A command-line tool for managing cryptocurrency mnemonics using BIP39 and SLIP39 standards. This tool allows you to split, combine, and convert mnemonic phrases for secure key management.
 
 ## Features
@@ -12,11 +17,18 @@ A command-line tool for managing cryptocurrency mnemonics using BIP39 and SLIP39
 
 ## Installation
 
-### Development Setup
+### From PyPI (Recommended)
 
-From the CLI directory:
 ```bash
-cd cli
+pip install interstellar
+```
+
+### From Source
+
+Clone the repository and install dependencies:
+```bash
+git clone https://github.com/alkalescent/interstellar.git
+cd interstellar
 uv sync
 ```
 
@@ -24,10 +36,10 @@ uv sync
 
 From the repository root:
 ```bash
-./scripts/cli.sh
+./build.sh
 ```
 
-This creates a standalone executable at `dist/cli`.
+This creates a standalone executable at `cli.dist/interstellar`.
 
 ## Usage
 
@@ -39,12 +51,12 @@ Split a BIP39 mnemonic into multiple parts or SLIP39 shares.
 
 **From command line:**
 ```bash
-./dist/cli deconstruct --mnemonic "your 24 word mnemonic phrase here..."
+interstellar deconstruct --mnemonic "your 24 word mnemonic phrase here..."
 ```
 
 **From file:**
 ```bash
-./dist/cli deconstruct --filename seed.txt
+interstellar deconstruct --filename seed.txt
 ```
 
 **Options:**
@@ -79,7 +91,7 @@ For SLIP39:
 
 **Example: Create SLIP39 shares**
 ```bash
-./dist/cli deconstruct \
+interstellar deconstruct \
   --mnemonic "word1 word2 ... word24" \
   --standard SLIP39 \
   --required 2 \
@@ -88,7 +100,7 @@ For SLIP39:
 
 **Example: Split into BIP39 parts**
 ```bash
-./dist/cli deconstruct \
+interstellar deconstruct \
   --mnemonic "word1 word2 ... word24" \
   --standard BIP39 \
   --split 2
@@ -100,12 +112,12 @@ Reconstruct a BIP39 mnemonic from shares or parts.
 
 **From command line (semicolon and comma delimited):**
 ```bash
-./dist/cli reconstruct --shares "group1_share1,group1_share2;group2_share1,group2_share2"
+interstellar reconstruct --shares "group1_share1,group1_share2;group2_share1,group2_share2"
 ```
 
 **From file:**
 ```bash
-./dist/cli reconstruct --filename shares.txt
+interstellar reconstruct --filename shares.txt
 ```
 
 **Options:**
@@ -124,14 +136,14 @@ Reconstruct a BIP39 mnemonic from shares or parts.
 
 **Example: Reconstruct from SLIP39 shares (CLI)**
 ```bash
-./dist/cli reconstruct \
+interstellar reconstruct \
   --shares "group1_share1,group1_share2;group2_share1,group2_share2" \
   --standard SLIP39
 ```
 
 **Example: Reconstruct from file**
 ```bash
-./dist/cli reconstruct --filename shares.txt --standard SLIP39
+interstellar reconstruct --filename shares.txt --standard SLIP39
 ```
 
 ## File Format
@@ -170,20 +182,19 @@ All commands output JSON for easy parsing and piping:
 
 ```bash
 # Extract just the shares
-./dist/cli deconstruct --filename seed.txt | jq -r '.shares'
+interstellar deconstruct --filename seed.txt | jq -r '.shares'
 
 # Extract the reconstructed mnemonic
-./dist/cli reconstruct --filename shares.txt | jq -r '.mnemonic'
+interstellar reconstruct --filename shares.txt | jq -r '.mnemonic'
 
 # Save output to file
-./dist/cli deconstruct --mnemonic "word1 ..." > output.json
+interstellar deconstruct --mnemonic "word1 ..." > output.json
 ```
 
 ## Testing
 
 Run the test suite:
 ```bash
-cd cli
 uv run pytest -v
 ```
 
@@ -205,7 +216,7 @@ uv run pytest --cov --cov-report=term-missing --cov-fail-under=90
 
 ## Architecture
 
-The CLI consists of three main modules:
+The CLI consists of the following modules:
 
 - **`tools.py`**: Core BIP39 and SLIP39 implementation
   - `BIP39` class: Mnemonic generation, validation, splitting
@@ -215,10 +226,10 @@ The CLI consists of three main modules:
   - `deconstruct`: Split mnemonics into parts/shares
   - `reconstruct`: Rebuild mnemonics from parts/shares
 
-- **`test_tools.py`**: Comprehensive test suite
+- **`test_tools.py`** / **`test_cli.py`**: Comprehensive test suites
   - BIP39 generation and roundtrip tests
   - SLIP39 share creation and reconstruction
-  - Integration tests for full workflows
+  - CLI integration tests
 
 ## Examples
 
@@ -232,7 +243,7 @@ The CLI consists of three main modules:
 
 ```bash
 # Deconstruct (outputs JSON)
-./dist/cli deconstruct \
+interstellar deconstruct \
   --mnemonic "abandon abandon ... art" \
   --standard SLIP39 \
   --required 2 \
@@ -242,10 +253,10 @@ The CLI consists of three main modules:
 cat shares.json | jq -r '.shares'
 
 # Reconstruct from file
-./dist/cli reconstruct --filename backup_shares.txt --standard SLIP39
+interstellar reconstruct --filename backup_shares.txt --standard SLIP39
 
 # Or from command line
-./dist/cli reconstruct \
+interstellar reconstruct \
   --shares "share1,share2;share3,share4" \
   --standard SLIP39
 ```
@@ -256,8 +267,8 @@ cat shares.json | jq -r '.shares'
 - `mnemonic`: BIP39 mnemonic implementation
 - `slip39`: SLIP39 Shamir Secret Sharing
 - `typer`: Modern CLI framework
-- `pytest`: Testing framework
+- `requests`: HTTP client
 
 ## License
 
-For personal and educational use.
+MIT License - see [LICENSE](LICENSE) for details.
