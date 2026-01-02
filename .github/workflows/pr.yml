@@ -118,9 +118,45 @@ jobs:
           
           To change the bump type, include in commit message: \`#major\`, \`#minor\`, or \`#patch\``;
           
-          github.rest.issues.createComment({
+          // Find existing bot comment with version preview
+          const { data: comments } = await github.rest.issues.listComments({
             issue_number: context.issue.number,
             owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: body
+            repo: context.repo.repo
           });
+          
+          const botComment = comments.find(c => 
+            c.user.type === 'Bot' && 
+            c.body.includes('## 📦 Version Preview')
+          );
+          
+          if (botComment) {
+            // Check if version info changed by comparing release version and bump type
+            const oldVersionMatch = botComment.body.match(/Release version:\*\* `([^`]+)`/);
+            const oldBumpMatch = botComment.body.match(/Bump type:\*\* `([^`]+)`/);
+            const oldReleaseVersion = oldVersionMatch ? oldVersionMatch[1] : '';
+            const oldBumpType = oldBumpMatch ? oldBumpMatch[1] : '';
+            
+            if (oldReleaseVersion === baseVersion && oldBumpType === part) {
+              console.log('Version info unchanged, skipping comment update');
+              return;
+            }
+            
+            // Update existing comment
+            await github.rest.issues.updateComment({
+              comment_id: botComment.id,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+            console.log('Updated existing version comment');
+          } else {
+            // Create new comment
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+            console.log('Created new version comment');
+          }
