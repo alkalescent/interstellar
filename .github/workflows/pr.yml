@@ -37,13 +37,6 @@ jobs:
     
     - name: Run tests with coverage
       run: uv run pytest --cov --cov-report=xml --cov-report=term
-    
-    # - name: Upload coverage to Codecov
-    #   uses: codecov/codecov-action@v4
-    #   if: matrix.os == 'ubuntu-latest'
-    #   with:
-    #     files: ./coverage.xml
-    #     fail_ci_if_error: false
 
   version-preview:
     name: Version Preview & TestPyPI
@@ -52,7 +45,19 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       with:
-        fetch-depth: 0  # Need full history to get all commits
+        fetch-depth: 0  # Need full history for version calculation
+    
+    - name: Calculate next version (dry run)
+      id: version
+      uses: anothrNick/github-tag-action@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        DRY_RUN: true
+        DEFAULT_BUMP: minor
+        WITH_V: false
+        PRERELEASE: true
+        PRERELEASE_SUFFIX: rc
+        BRANCH_HISTORY: compare
     
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -62,53 +67,12 @@ jobs:
     - name: Install uv
       uses: astral-sh/setup-uv@v4
     
-    - name: Get PR labels
-      id: pr-labels
-      uses: actions/github-script@v7
-      with:
-        script: |
-          const labels = context.payload.pull_request.labels.map(l => l.name).join(',');
-          core.setOutput('labels', labels);
-          console.log('PR Labels:', labels);
-    
-    - name: Get commit messages
-      id: commits
+    - name: Update version in pyproject.toml
       run: |
-        COMMITS=$(git log --format=%B origin/master..HEAD)
-        echo "commits<<EOF" >> $GITHUB_OUTPUT
-        echo "$COMMITS" >> $GITHUB_OUTPUT
-        echo "EOF" >> $GITHUB_OUTPUT
-    
-    - name: Determine version bump and create RC version
-      id: version
-      run: |
-        chmod +x .github/scripts/version_manager.py
-        
-        # Get current version
-        CURRENT_VERSION=$(.github/scripts/version_manager.py read)
-        echo "current=$CURRENT_VERSION" >> $GITHUB_OUTPUT
-        
-        # Determine bump type
-        BUMP_TYPE=$(.github/scripts/version_manager.py determine "${{ steps.commits.outputs.commits }}" "${{ steps.pr-labels.outputs.labels }}")
-        echo "bump_type=$BUMP_TYPE" >> $GITHUB_OUTPUT
-        
-        # Calculate next version
-        NEXT_VERSION=$(.github/scripts/version_manager.py bump $BUMP_TYPE)
-        echo "next=$NEXT_VERSION" >> $GITHUB_OUTPUT
-        
-        # Create RC version with timestamp
-        RC_VERSION=$(.github/scripts/version_manager.py rc $NEXT_VERSION)
-        echo "rc=$RC_VERSION" >> $GITHUB_OUTPUT
-        
-        echo "Current version: $CURRENT_VERSION"
-        echo "Bump type: $BUMP_TYPE"
-        echo "Next version: $NEXT_VERSION"
-        echo "RC version: $RC_VERSION"
-    
-    - name: Update version for TestPyPI
-      run: |
-        .github/scripts/version_manager.py update "${{ steps.version.outputs.rc }}"
-        cat pyproject.toml | grep version
+        # Update pyproject.toml with the prerelease version
+        sed -i "s/^version = .*/version = \"${{ steps.version.outputs.new_tag }}\"/" pyproject.toml
+        echo "Updated version to: ${{ steps.version.outputs.new_tag }}"
+        grep "^version" pyproject.toml
     
     - name: Build distributions
       run: |
@@ -128,22 +92,23 @@ jobs:
       uses: actions/github-script@v7
       with:
         script: |
-          const current = '${{ steps.version.outputs.current }}';
-          const bumpType = '${{ steps.version.outputs.bump_type }}';
-          const next = '${{ steps.version.outputs.next }}';
-          const rc = '${{ steps.version.outputs.rc }}';
+          const oldTag = '${{ steps.version.outputs.old_tag }}' || 'none';
+          const newTag = '${{ steps.version.outputs.new_tag }}';
+          const part = '${{ steps.version.outputs.part }}';
+          
+          // Extract base version (remove -rc.X suffix for display)
+          const baseVersion = newTag.replace(/-rc\.\d+$/, '');
           
           const body = `## 📦 Version Preview
           
-          - **Current version:** \`${current}\`
-          - **Bump type:** \`${bumpType}\`
-          - **Next version:** \`${next}\`
-          - **TestPyPI version:** \`${rc}\`
+          - **Current version:** \`${oldTag}\`
+          - **Bump type:** \`${part}\`
+          - **Release version:** \`${baseVersion}\`
+          - **TestPyPI version:** \`${newTag}\`
           
-          When this PR is merged, version will be bumped to \`${next}\`.
+          When this PR is merged, version will be bumped to \`${baseVersion}\`.
           
-          To change the bump type, add a label: \`major\`, \`minor\`, or \`patch\`
-          Or include in commit message: \`#major\`, \`#minor\`, or \`#patch\``;
+          To change the bump type, include in commit message: \`#major\`, \`#minor\`, or \`#patch\``;
           
           github.rest.issues.createComment({
             issue_number: context.issue.number,
