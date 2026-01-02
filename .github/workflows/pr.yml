@@ -41,6 +41,9 @@ jobs:
   version-preview:
     name: Version Preview & TestPyPI
     runs-on: ubuntu-latest
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/${{ github.event.repository.name }}
     
     steps:
     - uses: actions/checkout@v4
