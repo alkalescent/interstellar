@@ -1,6 +1,7 @@
 import pytest
+
+from conftest import SPLIT_PARTS, WORDS_24, assert_eth_addr
 from tools import BIP39, SLIP39
-from conftest import WORDS_24, SPLIT_PARTS, assert_eth_addr
 
 # Test constants
 WORDS_12 = 12
@@ -94,7 +95,8 @@ class TestSLIP39:
         """Test deconstructing and reconstructing a 24-word mnemonic."""
         mnemo = self.slip39.generate(WORDS_24)
         shares = self.slip39.deconstruct(
-            mnemo, required=SHARES_REQUIRED, total=SHARES_TOTAL)
+            mnemo, required=SHARES_REQUIRED, total=SHARES_TOTAL
+        )
 
         assert len(shares) == SHARES_TOTAL
 
@@ -106,13 +108,13 @@ class TestSLIP39:
         """Test reconstruction with different share combinations."""
         mnemo = self.slip39.generate(WORDS_24)
         shares = self.slip39.deconstruct(
-            mnemo, required=SHARES_REQUIRED, total=SHARES_TOTAL)
+            mnemo, required=SHARES_REQUIRED, total=SHARES_TOTAL
+        )
 
         # Test all possible 2-share combinations
         assert self.slip39.reconstruct(shares[:SHARES_REQUIRED]) == mnemo
         assert self.slip39.reconstruct(shares[1:]) == mnemo
-        assert self.slip39.reconstruct(
-            [shares[0], shares[SHARES_REQUIRED]]) == mnemo
+        assert self.slip39.reconstruct([shares[0], shares[SHARES_REQUIRED]]) == mnemo
 
     def test_wordlist(self):
         """Test SLIP39 wordlist has correct properties."""
@@ -141,27 +143,28 @@ class TestIntegration:
 
         # Convert first BIP39 part to SLIP39 shares
         slip_one = self.slip39.deconstruct(
-            bip_one, required=SHARES_REQUIRED, total=SHARES_TOTAL)
+            bip_one, required=SHARES_REQUIRED, total=SHARES_TOTAL
+        )
         assert len(slip_one) == SHARES_TOTAL
 
         # Reconstruct first BIP39 part
-        bip_one_reconstructed = self.slip39.reconstruct(
-            slip_one[:SHARES_REQUIRED])
+        bip_one_reconstructed = self.slip39.reconstruct(slip_one[:SHARES_REQUIRED])
         assert bip_one_reconstructed == bip_one
 
         # Convert second BIP39 part to SLIP39 shares
         slip_two = self.slip39.deconstruct(
-            bip_two, required=SHARES_REQUIRED, total=SHARES_TOTAL)
+            bip_two, required=SHARES_REQUIRED, total=SHARES_TOTAL
+        )
         assert len(slip_two) == SHARES_TOTAL
 
         # Reconstruct second BIP39 part
-        bip_two_reconstructed = self.slip39.reconstruct(
-            slip_two[:SHARES_REQUIRED])
+        bip_two_reconstructed = self.slip39.reconstruct(slip_two[:SHARES_REQUIRED])
         assert bip_two_reconstructed == bip_two
 
         # Reconstruct full mnemonic
         mnemo_reconstructed = self.bip39.reconstruct(
-            [bip_one_reconstructed, bip_two_reconstructed])
+            [bip_one_reconstructed, bip_two_reconstructed]
+        )
         assert mnemo_reconstructed == mnemo
 
     def test_12_word_direct(self):
@@ -172,7 +175,8 @@ class TestIntegration:
         # Cannot deconstruct 12-word BIP39 into 2 parts (entropy too small)
         # Instead, test SLIP39 directly on the 12-word mnemonic
         shares = self.slip39.deconstruct(
-            mnemo, required=SHARES_REQUIRED, total=SHARES_TOTAL)
+            mnemo, required=SHARES_REQUIRED, total=SHARES_TOTAL
+        )
 
         # Reconstruct from shares
         mnemo_reconstructed = self.slip39.reconstruct(shares[:SHARES_REQUIRED])
@@ -191,6 +195,7 @@ class TestIntegration:
         for _ in range(TEST_ITERATIONS):
             mnemo = self.slip39.generate(WORDS_24)
             shares = self.slip39.deconstruct(
-                mnemo, required=SHARES_REQUIRED, total=SHARES_TOTAL)
+                mnemo, required=SHARES_REQUIRED, total=SHARES_TOTAL
+            )
             reconstructed = self.slip39.reconstruct(shares[:SHARES_REQUIRED])
             assert reconstructed == mnemo

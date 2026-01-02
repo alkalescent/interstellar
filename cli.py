@@ -1,8 +1,11 @@
-import typer
-import logging
 import json
+import logging
 from typing import Annotated
+
+import typer
+
 from tools import BIP39, SLIP39
+
 logging.getLogger("slip39").setLevel(logging.ERROR)
 
 
@@ -15,10 +18,11 @@ class CLI:
 
     def get_mnemos(self, filename: str) -> list[list[str]]:
         """Get the mnemos from a file."""
-        with open(filename, "r") as f:
-            return [[
-                subline.strip() for subline in line.strip().split(',')
-            ] for line in f.readlines()]
+        with open(filename) as f:
+            return [
+                [subline.strip() for subline in line.strip().split(",")]
+                for line in f.readlines()
+            ]
 
     def enforce_standard(self, standard: str):
         if standard.upper() not in ["SLIP39", "BIP39"]:
@@ -29,8 +33,8 @@ class CLI:
         value = value.strip()
         if not value:
             return []
-        lines = value.split(';')
-        result = [line.strip().split(',') for line in lines]
+        lines = value.split(";")
+        result = [line.strip().split(",") for line in lines]
         return result
 
 
@@ -40,20 +44,28 @@ cli = CLI()
 
 @app.command()
 def deconstruct(
-    mnemonic: Annotated[str, typer.Option(
-        help="BIP39 mnemonic to deconstruct")] = "",
-    filename: Annotated[str, typer.Option(
-        help="File containing the BIP39 mnemonic"
-    )] = "",
-    standard: Annotated[str, typer.Option(
-        help="Output format: 'BIP39' or 'SLIP39'")] = "SLIP39",
-    required: Annotated[int, typer.Option(
-        help="Number of required shares for SLIP39 reconstruction (e.g. 2 of 3)")] = 2,
-    total: Annotated[int, typer.Option(
-        help="Number of total shares for SLIP39 reconstruction (e.g. 3 of 3)")] = 3,
-    digits: Annotated[bool, typer.Option(
-        help="Output format: use digits instead of words"
-    )] = False
+    mnemonic: Annotated[str, typer.Option(help="BIP39 mnemonic to deconstruct")] = "",
+    filename: Annotated[
+        str, typer.Option(help="File containing the BIP39 mnemonic")
+    ] = "",
+    standard: Annotated[
+        str, typer.Option(help="Output format: 'BIP39' or 'SLIP39'")
+    ] = "SLIP39",
+    required: Annotated[
+        int,
+        typer.Option(
+            help="Number of required shares for SLIP39 reconstruction (e.g. 2 of 3)"
+        ),
+    ] = 2,
+    total: Annotated[
+        int,
+        typer.Option(
+            help="Number of total shares for SLIP39 reconstruction (e.g. 3 of 3)"
+        ),
+    ] = 3,
+    digits: Annotated[
+        bool, typer.Option(help="Output format: use digits instead of words")
+    ] = False,
 ):
     cli.enforce_standard(standard)
     if not mnemonic:
@@ -67,12 +79,15 @@ def deconstruct(
 
     bip_parts = cli.bip39.deconstruct(mnemonic, split)
     if standard.upper() == "BIP39":
-        output = [{
-            "standard": "BIP39",
-            "mnemonic": bip_part,
-            "eth_addr": cli.bip39.eth(bip_part),
-            "digits": digits
-        } for bip_part in bip_parts]
+        output = [
+            {
+                "standard": "BIP39",
+                "mnemonic": bip_part,
+                "eth_addr": cli.bip39.eth(bip_part),
+                "digits": digits,
+            }
+            for bip_part in bip_parts
+        ]
         typer.echo(json.dumps(output))
         raise typer.Exit(code=0)
     else:
@@ -80,15 +95,17 @@ def deconstruct(
         for part in bip_parts:
             shares = cli.slip39.deconstruct(part, required, total)
             if digits:
-                shares = [" ".join(str(cli.slip39.map[word])
-                                   for word in share.split()) for share in shares]
+                shares = [
+                    " ".join(str(cli.slip39.map[word]) for word in share.split())
+                    for share in shares
+                ]
             total_shares.append(shares)
 
         output = {
             "standard": "SLIP39",
             "shares": total_shares,
             "split": split,
-            "digits": digits
+            "digits": digits,
         }
         typer.echo(json.dumps(output))
         raise typer.Exit(code=0)
@@ -96,18 +113,18 @@ def deconstruct(
 
 @app.command()
 def reconstruct(
-    shares: Annotated[str, typer.Option(
-        help="SLIP39 shares to reconstruct",
-        parser=cli.parse_2D_list
-    )] = "",
-    filename: Annotated[str, typer.Option(
-        help="File containing the SLIP39 shares (newline separated)"
-    )] = "",
-    standard: Annotated[str, typer.Option(
-        help="Input format: 'BIP39' or 'SLIP39'")] = "SLIP39",
-    digits: Annotated[bool, typer.Option(
-        help="Input format: use digits instead of words"
-    )] = False,
+    shares: Annotated[
+        str, typer.Option(help="SLIP39 shares to reconstruct", parser=cli.parse_2D_list)
+    ] = "",
+    filename: Annotated[
+        str, typer.Option(help="File containing the SLIP39 shares (newline separated)")
+    ] = "",
+    standard: Annotated[
+        str, typer.Option(help="Input format: 'BIP39' or 'SLIP39'")
+    ] = "SLIP39",
+    digits: Annotated[
+        bool, typer.Option(help="Input format: use digits instead of words")
+    ] = False,
 ):
     cli.enforce_standard(standard)
     if not shares:
@@ -122,23 +139,27 @@ def reconstruct(
         shares = []
         for gidx, group in enumerate(groups):
             if digits:
-                group = [" ".join(cli.slip39.words[int(idx)-1]
-                                  for idx in member.split()) for member in group]
+                group = [
+                    " ".join(cli.slip39.words[int(idx) - 1] for idx in member.split())
+                    for member in group
+                ]
 
             required = cli.slip39.get_required(group[gidx])
             shares.append(cli.slip39.reconstruct(group))
     else:  # BIP39
         shares = [part for group in shares for part in group]
         if digits:
-            shares = [" ".join(cli.bip39.words[int(idx)-1]
-                               for idx in share.split()) for share in shares[0]]
+            shares = [
+                " ".join(cli.bip39.words[int(idx) - 1] for idx in share.split())
+                for share in shares[0]
+            ]
     reconstructed = cli.bip39.reconstruct(shares)
     output = {
         "standard": "BIP39",
         "mnemonic": reconstructed,
         "eth_addr": cli.bip39.eth(reconstructed),
         "required": required,
-        "digits": digits
+        "digits": digits,
     }
     typer.echo(json.dumps(output))
     raise typer.Exit(code=0)
