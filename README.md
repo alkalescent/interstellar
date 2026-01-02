@@ -195,12 +195,12 @@ interstellar deconstruct --mnemonic "word1 ..." > output.json
 
 Run the test suite:
 ```bash
-uv run pytest -v
+uv run python -m pytest -v
 ```
 
 Run with coverage reporting (requires 90% coverage):
 ```bash
-uv run pytest --cov --cov-report=term-missing --cov-fail-under=90
+uv run python -m pytest --cov --cov-report=term-missing --cov-fail-under=90
 ```
 
 ## Security Notes
