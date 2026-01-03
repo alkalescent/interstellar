@@ -17,7 +17,6 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
-    "hdwallet>=3.6.1",
     "mnemonic>=0.21",
     "requests>=2.32.5",
     "slip39>=14.0.2",
