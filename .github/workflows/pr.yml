@@ -39,6 +39,7 @@ jobs:
         PRERELEASE: true
         PRERELEASE_SUFFIX: rc
         BRANCH_HISTORY: compare
+        INITIAL_VERSION: 1.0.3
     
     - name: Set up Python
       uses: actions/setup-python@v5
