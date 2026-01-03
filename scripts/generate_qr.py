@@ -4,6 +4,7 @@
 import hashlib
 import re
 import sys
+from io import BytesIO
 from pathlib import Path
 
 import qrcode
@@ -49,8 +50,6 @@ def generate_qr_image(data: str, output_path: Path) -> bool:
     img = qr.make_image(fill_color="black", back_color="white")
 
     # Convert to bytes for comparison
-    from io import BytesIO
-
     buffer = BytesIO()
     img.save(buffer, format="PNG")
     new_content = buffer.getvalue()
