@@ -2,22 +2,18 @@ import slip39
 from hdwallet import HDWallet
 from hdwallet.cryptocurrencies import Ethereum
 from hdwallet.mnemonics import (
+    BIP39_MNEMONIC_LANGUAGES,
+    SLIP39_MNEMONIC_LANGUAGES,
     BIP39Mnemonic,
     SLIP39Mnemonic,
 )
 from hdwallet.symbols import ETH
 from mnemonic import Mnemonic
+from shamir_mnemonic.share import Share
 from shamir_mnemonic.wordlist import WORDLIST
 
 
-class IP39:
-    def generate(self, num_words: int) -> str:
-        """Generate a random mnemonic of BIP39 words."""
-        mnemo = self.mnemo.generate(num_words * 32 // 3)
-        return mnemo
-
-
-class BIP39(IP39):
+class BIP39:
     """BIP39 class to handle mnemonic generation and validation."""
 
     def __init__(self):
@@ -41,6 +37,9 @@ class BIP39(IP39):
             raise ValueError("Invalid BIP39 mnemo.")
         # Convert the mnemo to entropy
         entropy = self.mnemo.to_entropy(mnemo)
+        # Check if the entropy split is valid
+        if len(entropy) % split:
+            raise ValueError("Invalid BIP39 entropy split.")
         # Split the entropy into split parts
         size = len(entropy) // split
         entropies = [entropy[i * size : (i + 1) * size] for i in range(split)]
@@ -56,8 +55,13 @@ class BIP39(IP39):
         addr = wallet.address()
         return addr
 
+    def generate(self, num_words: int) -> str:
+        """Generate a random mnemonic of BIP39 words."""
+        mnemo = BIP39Mnemonic.from_words(num_words, BIP39_MNEMONIC_LANGUAGES.ENGLISH)
+        return mnemo
 
-class SLIP39(IP39):
+
+class SLIP39:
     """
     SLIP39 implementation for generating and reconstructing
     mnemonic phrases.
@@ -85,8 +89,6 @@ class SLIP39(IP39):
     def get_required(self, share: str) -> int:
         """Extract required threshold from a SLIP39 share.
         Returns required number of shares needed for reconstruction."""
-        from shamir_mnemonic.share import Share
-
         share_obj = Share.from_mnemonic(share)
         return share_obj.member_threshold
 
@@ -95,3 +97,8 @@ class SLIP39(IP39):
         wallet = HDWallet(symbol=ETH, cryptocurrency=Ethereum).from_mnemonic(mnemo)
         addr = wallet.address()
         return addr
+
+    def generate(self, num_words: int) -> str:
+        """Generate a random mnemonic of SLIP39 words."""
+        mnemo = SLIP39Mnemonic.from_words(num_words, SLIP39_MNEMONIC_LANGUAGES.ENGLISH)
+        return mnemo

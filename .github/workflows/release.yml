@@ -132,15 +132,15 @@ jobs:
         MODE: onefile
         CI: true
       run: |
-        chmod +x build.sh
-        ./build.sh
+        chmod +x scripts/build.sh
+        ./scripts/build.sh
       shell: bash
     
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: ${{ github.event.repository.name }}-${{ matrix.artifact_suffix }}
-        path: cli.dist/${{ github.event.repository.name }}${{ matrix.binary_name }}
+        path: ${{ github.event.repository.name }}${{ matrix.binary_name }}
         if-no-files-found: error
 
   build-standalone:
@@ -179,8 +179,8 @@ jobs:
         MODE: standalone
         CI: true
       run: |
-        chmod +x build.sh
-        ./build.sh
+        chmod +x scripts/build.sh
+        ./scripts/build.sh
       shell: bash
     
     - name: Create archive

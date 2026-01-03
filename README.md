@@ -19,10 +19,23 @@ A command-line tool for managing cryptocurrency mnemonics using BIP39 and SLIP39
 
 Love this tool? Your support means the world! ❤️
 
-| Currency | Address |
-|----------|---------|
-| **₿ BTC** | `bc1qwn7ea6s8wqx66hl5rr2supk4kv7qtcxnlqcqfk` |
-| **Ξ ETH** | `0x7cdB1861AC1B4385521a6e16dF198e7bc43fDE5f` |
+<table align="center">
+  <tr>
+    <th>Currency</th>
+    <th>Address</th>
+    <th>QR</th>
+  </tr>
+  <tr>
+    <td><strong>₿ BTC</strong></td>
+    <td><code>bc1qwn7ea6s8wqx66hl5rr2supk4kv7qtcxnlqcqfk</code></td>
+    <td><img src="assets/qr_btc.png" width="80" /></td>
+  </tr>
+  <tr>
+    <td><strong>Ξ ETH</strong></td>
+    <td><code>0x7cdB1861AC1B4385521a6e16dF198e7bc43fDE5f</code></td>
+    <td><img src="assets/qr_eth.png" width="80" /></td>
+  </tr>
+</table>
 
 ## 📦 Installation
 
@@ -272,11 +285,10 @@ interstellar reconstruct \
 
 ## 📚 Dependencies
 
-- `hdwallet`: HD wallet generation and derivation
+- `hdwallet`: HD wallet generation and derivation (subdependency of slip39)
 - `mnemonic`: BIP39 mnemonic implementation
 - `slip39`: SLIP39 Shamir Secret Sharing
 - `typer`: Modern CLI framework
-- `requests`: HTTP client
 
 ## 📄 License
 

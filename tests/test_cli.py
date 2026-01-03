@@ -2,10 +2,10 @@ import json
 import os
 import tempfile
 
+from conftest import SPLIT_PARTS, WORDS_24, assert_eth_addr
 from typer.testing import CliRunner
 
 from cli import app
-from conftest import SPLIT_PARTS, WORDS_24, assert_eth_addr
 from tools import BIP39, SLIP39
 
 runner = CliRunner()
@@ -354,17 +354,11 @@ class TestRoundtrip:
         decon_output = json.loads(result.stdout)
 
         # Extract 5 shares from each group
-        shares_list = (
-            decon_output["shares"][0][:5] + [";"] + decon_output["shares"][1][:5]
+        shares_str = (
+            ",".join(decon_output["shares"][0][:5])
+            + ";"
+            + ",".join(decon_output["shares"][1][:5])
         )
-        shares_str = ""
-        for i, share in enumerate(shares_list):
-            if share == ";":
-                shares_str += ";"
-            else:
-                shares_str += share
-                if i < len(shares_list) - 1 and shares_list[i + 1] != ";":
-                    shares_str += ","
 
         # Reconstruct
         result = runner.invoke(app, ["reconstruct", "--shares", shares_str])
@@ -407,6 +401,60 @@ class TestRoundtrip:
 
             # Verify roundtrip
             assert recon_output["mnemonic"] == self.mnemo_24
+        finally:
+            os.unlink(temp_file)
+
+    def test_bip39_with_digits(self):
+        """Test BIP39-only roundtrip with digits mode."""
+        # Deconstruct to BIP39 with digits
+        result = runner.invoke(
+            app,
+            [
+                "deconstruct",
+                "--mnemonic",
+                self.mnemo_24,
+                "--standard",
+                "BIP39",
+                "--digits",
+            ],
+        )
+
+        assert result.exit_code == 0
+        decon_output = json.loads(result.stdout)
+        assert isinstance(decon_output, list)
+        assert len(decon_output) == 2
+        assert decon_output[0]["digits"] is True
+        assert decon_output[1]["digits"] is True
+        # Verify mnemonics are in digit format (space-separated numbers)
+        first_mnemonic = decon_output[0]["mnemonic"]
+        assert all(char.isdigit() or char == " " for char in first_mnemonic)
+
+        # Create file with BIP39 digit parts (one per line)
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".txt") as f:
+            f.write(f"{decon_output[0]['mnemonic']}\n")
+            f.write(f"{decon_output[1]['mnemonic']}\n")
+            temp_file = f.name
+
+        try:
+            # Reconstruct from BIP39 digits
+            result = runner.invoke(
+                app,
+                [
+                    "reconstruct",
+                    "--filename",
+                    temp_file,
+                    "--standard",
+                    "BIP39",
+                    "--digits",
+                ],
+            )
+
+            assert result.exit_code == 0
+            recon_output = json.loads(result.stdout)
+
+            # Verify roundtrip
+            assert recon_output["mnemonic"] == self.mnemo_24
+            assert recon_output["digits"] is True
         finally:
             os.unlink(temp_file)
 
