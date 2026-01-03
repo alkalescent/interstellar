@@ -12,8 +12,8 @@ fi
 
 MODE="${MODE:-standalone}"
 
-SITE_PACKAGES=$(uv run python3 -c "import sysconfig; print(sysconfig.get_path('purelib'))")
-uv run python3 -m nuitka \
+SITE_PACKAGES=$(uv run python -c "import sysconfig; print(sysconfig.get_path('purelib'))")
+uv run python -m nuitka \
   --mode="${MODE}" \
   --output-filename="${NAME}" \
   --include-data-files="$SITE_PACKAGES/shamir_mnemonic/wordlist.txt=./shamir_mnemonic/wordlist.txt" \
