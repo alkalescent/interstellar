@@ -409,7 +409,14 @@ class TestRoundtrip:
         # Deconstruct to BIP39 with digits
         result = runner.invoke(
             app,
-            ["deconstruct", "--mnemonic", self.mnemo_24, "--standard", "BIP39", "--digits"],
+            [
+                "deconstruct",
+                "--mnemonic",
+                self.mnemo_24,
+                "--standard",
+                "BIP39",
+                "--digits",
+            ],
         )
 
         assert result.exit_code == 0
@@ -432,7 +439,14 @@ class TestRoundtrip:
             # Reconstruct from BIP39 digits
             result = runner.invoke(
                 app,
-                ["reconstruct", "--filename", temp_file, "--standard", "BIP39", "--digits"],
+                [
+                    "reconstruct",
+                    "--filename",
+                    temp_file,
+                    "--standard",
+                    "BIP39",
+                    "--digits",
+                ],
             )
 
             assert result.exit_code == 0

@@ -74,7 +74,7 @@ def deconstruct(
             if mnemos and mnemos[0]:
                 mnemonic = mnemos[0][0]
         except FileNotFoundError:
-            raise typer.BadParameter(f"File not found: {filename}")
+            raise typer.BadParameter(f"File not found: {filename}") from None
     if not mnemonic:
         raise ValueError("Mnemonic is required")
 
@@ -143,7 +143,7 @@ def reconstruct(
         try:
             shares = cli.get_mnemos(filename)
         except FileNotFoundError:
-            raise typer.BadParameter(f"File not found: {filename}")
+            raise typer.BadParameter(f"File not found: {filename}") from None
     if not shares:
         raise ValueError("Shares are required")
 
