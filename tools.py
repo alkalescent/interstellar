@@ -10,14 +10,14 @@ from mnemonic import Mnemonic
 from shamir_mnemonic.wordlist import WORDLIST
 
 
-class IP39:
+class MnemonicBase:
     def generate(self, num_words: int) -> str:
         """Generate a random mnemonic of BIP39 words."""
         mnemo = self.mnemo.generate(num_words * 32 // 3)
         return mnemo
 
 
-class BIP39(IP39):
+class BIP39(MnemonicBase):
     """BIP39 class to handle mnemonic generation and validation."""
 
     def __init__(self):
@@ -57,7 +57,7 @@ class BIP39(IP39):
         return addr
 
 
-class SLIP39(IP39):
+class SLIP39(MnemonicBase):
     """
     SLIP39 implementation for generating and reconstructing
     mnemonic phrases.
