@@ -9,6 +9,7 @@ from hdwallet.mnemonics import (
 )
 from hdwallet.symbols import ETH
 from mnemonic import Mnemonic
+from shamir_mnemonic.share import Share
 from shamir_mnemonic.wordlist import WORDLIST
 
 
@@ -85,8 +86,6 @@ class SLIP39:
     def get_required(self, share: str) -> int:
         """Extract required threshold from a SLIP39 share.
         Returns required number of shares needed for reconstruction."""
-        from shamir_mnemonic.share import Share
-
         share_obj = Share.from_mnemonic(share)
         return share_obj.member_threshold
 
