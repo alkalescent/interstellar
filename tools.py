@@ -2,10 +2,10 @@ import slip39
 from hdwallet import HDWallet
 from hdwallet.cryptocurrencies import Ethereum
 from hdwallet.mnemonics import (
-    BIP39Mnemonic,
-    SLIP39Mnemonic,
     BIP39_MNEMONIC_LANGUAGES,
     SLIP39_MNEMONIC_LANGUAGES,
+    BIP39Mnemonic,
+    SLIP39Mnemonic,
 )
 from hdwallet.symbols import ETH
 from mnemonic import Mnemonic
@@ -50,7 +50,7 @@ class BIP39:
         wallet = HDWallet(symbol=ETH, cryptocurrency=Ethereum).from_mnemonic(mnemo)
         addr = wallet.address()
         return addr
-    
+
     def generate(self, num_words: int) -> str:
         """Generate a random mnemonic of BIP39 words."""
         mnemo = BIP39Mnemonic.from_words(num_words, BIP39_MNEMONIC_LANGUAGES.ENGLISH)
@@ -95,7 +95,7 @@ class SLIP39:
         wallet = HDWallet(symbol=ETH, cryptocurrency=Ethereum).from_mnemonic(mnemo)
         addr = wallet.address()
         return addr
-    
+
     def generate(self, num_words: int) -> str:
         """Generate a random mnemonic of SLIP39 words."""
         mnemo = SLIP39Mnemonic.from_words(num_words, SLIP39_MNEMONIC_LANGUAGES.ENGLISH)
