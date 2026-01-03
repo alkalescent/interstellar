@@ -132,8 +132,11 @@ def reconstruct(
     ] = False,
 ):
     cli.enforce_standard(standard)
-    if not shares:
-        shares = cli.get_mnemos(filename)
+    if not shares and filename:
+        try:
+            shares = cli.get_mnemos(filename)
+        except FileNotFoundError:
+            raise typer.BadParameter(f"File not found: {filename}")
     if not shares:
         raise ValueError("Shares are required")
 
