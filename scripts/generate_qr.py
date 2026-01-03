@@ -70,7 +70,8 @@ def generate_qr_image(data: str, output_path: Path) -> bool:
 
 def main():
     """Main entry point."""
-    repo_root = Path(__file__).parent
+    # Script is in scripts/, repo root is one level up
+    repo_root = Path(__file__).parent.parent
     readme_path = repo_root / "README.md"
     assets_dir = repo_root / "assets"
 

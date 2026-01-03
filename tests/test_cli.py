@@ -2,10 +2,10 @@ import json
 import os
 import tempfile
 
+from conftest import SPLIT_PARTS, WORDS_24, assert_eth_addr
 from typer.testing import CliRunner
 
 from cli import app
-from conftest import SPLIT_PARTS, WORDS_24, assert_eth_addr
 from tools import BIP39, SLIP39
 
 runner = CliRunner()

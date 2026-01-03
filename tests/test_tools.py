@@ -1,6 +1,6 @@
 import pytest
-
 from conftest import SPLIT_PARTS, WORDS_24, assert_eth_addr
+
 from tools import BIP39, SLIP39
 
 # Test constants

@@ -132,8 +132,8 @@ jobs:
         MODE: onefile
         CI: true
       run: |
-        chmod +x build.sh
-        ./build.sh
+        chmod +x scripts/build.sh
+        ./scripts/build.sh
       shell: bash
     
     - name: Upload artifact
@@ -179,8 +179,8 @@ jobs:
         MODE: standalone
         CI: true
       run: |
-        chmod +x build.sh
-        ./build.sh
+        chmod +x scripts/build.sh
+        ./scripts/build.sh
       shell: bash
     
     - name: Create archive

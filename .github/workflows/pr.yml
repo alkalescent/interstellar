@@ -37,7 +37,7 @@ jobs:
       run: uv sync
     
     - name: Generate QR codes
-      run: uv run python generate_qr.py
+      run: uv run python scripts/generate_qr.py
     
     - name: Commit if changed
       run: |

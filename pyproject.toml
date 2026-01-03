@@ -36,10 +36,11 @@ dev = ["pytest", "pytest-xdist", "pytest-cov", "nuitka", "ordered-set", "ruff"]
 
 [tool.pytest.ini_options]
 addopts = "-n auto"
+testpaths = ["tests"]
 
 [tool.coverage.run]
 source = ["."]
-omit = ["test_*.py", "conftest.py", ".venv/*", "build/*"]
+omit = ["tests/*", ".venv/*", "build/*", "scripts/*"]
 
 [tool.coverage.report]
 fail_under = 90
