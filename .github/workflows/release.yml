@@ -10,8 +10,13 @@ permissions:
   id-token: write
 
 jobs:
+  test:
+    name: Test
+    uses: ./.github/workflows/test.yml
+
   version-and-tag:
     name: Bump Version and Create Tag
+    needs: test  # Only release after tests pass
     runs-on: ubuntu-latest
     outputs:
       new_version: ${{ steps.version.outputs.new_tag }}
@@ -59,7 +64,6 @@ jobs:
     - uses: actions/checkout@v4
       with:
         ref: master
-        # Fetch the latest commit which includes the version bump
         fetch-depth: 1
     
     - name: Pull latest changes

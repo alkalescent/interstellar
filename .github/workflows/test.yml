@@ -2,11 +2,14 @@ name: Test
 
 on:
   push:
-    branches: [ master ]
-  # Pull requests run tests in pr.yml workflow
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_call:  # Allows this workflow to be called by other workflows
 
 jobs:
   test:
+    name: Run Tests
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -36,11 +39,3 @@ jobs:
     
     - name: Run tests with coverage
       run: uv run python -m pytest --cov --cov-report=xml --cov-report=term
-    
-    # - name: Upload coverage to Codecov
-    #   uses: codecov/codecov-action@v4
-    #   if: matrix.os == 'ubuntu-latest'
-    #   with:
-    #     files: ./coverage.xml
-    #     fail_ci_if_error: false
-    
