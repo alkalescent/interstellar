@@ -1,0 +1,225 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  test:
+    name: Test
+    uses: ./.github/workflows/test.yml
+
+  version-and-tag:
+    name: Bump Version and Create Tag
+    needs: test  # Only release after tests pass
+    runs-on: ubuntu-latest
+    outputs:
+      new_version: ${{ steps.version.outputs.new_tag }}
+      tag_name: ${{ steps.version.outputs.new_tag }}
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Bump version and push tag
+      id: version
+      uses: anothrNick/github-tag-action@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        DEFAULT_BUMP: minor
+        WITH_V: true
+        TAG_CONTEXT: repo
+        BRANCH_HISTORY: last
+        INITIAL_VERSION: 1.0.3
+    
+    - name: Update version in pyproject.toml
+      run: |
+        # Strip 'v' prefix for PyPI-compatible version
+        PYPI_VERSION="${NEW_TAG#v}"
+        sed -i "s/^version = .*/version = \"$PYPI_VERSION\"/" pyproject.toml
+        echo "Tag version: $NEW_TAG"
+        echo "PyPI version: $PYPI_VERSION"
+        grep "^version" pyproject.toml
+      env:
+        NEW_TAG: ${{ steps.version.outputs.new_tag }}
+    
+    - name: Commit version bump
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add pyproject.toml
+        git commit -m "Bump version to ${{ steps.version.outputs.new_tag }} [skip ci]"
+        git push
+
+  publish-pypi:
+    name: Publish to PyPI
+    needs: version-and-tag
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/${{ github.event.repository.name }}
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: master
+        fetch-depth: 1
+    
+    - name: Pull latest changes
+      run: git pull origin master
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+    
+    - name: Build distributions
+      run: |
+        uv build --sdist
+        uv build --wheel
+    
+    - name: Publish to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      # Uses OIDC trusted publishing - configure at:
+      # https://pypi.org/manage/account/publishing/
+
+  build-onefile:
+    name: Build Onefile (${{ matrix.os }})
+    needs: version-and-tag
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            artifact_suffix: linux-onefile
+            binary_name: ''
+          - os: macos-latest
+            artifact_suffix: macos-onefile
+            binary_name: ''
+          - os: windows-latest
+            artifact_suffix: windows-onefile.exe
+            binary_name: .exe
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: master
+    
+    - name: Pull latest changes
+      run: git pull origin master
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+    
+    - name: Build onefile binary
+      env:
+        MODE: onefile
+        CI: true
+      run: |
+        chmod +x build.sh
+        ./build.sh
+      shell: bash
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ github.event.repository.name }}-${{ matrix.artifact_suffix }}
+        path: cli.dist/${{ github.event.repository.name }}${{ matrix.binary_name }}
+        if-no-files-found: error
+
+  build-standalone:
+    name: Build Standalone (${{ matrix.os }})
+    needs: version-and-tag
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            platform: linux
+          - os: macos-latest
+            platform: macos
+          - os: windows-latest
+            platform: windows
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: master
+    
+    - name: Pull latest changes
+      run: git pull origin master
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+    
+    - name: Build standalone distribution
+      env:
+        MODE: standalone
+        CI: true
+      run: |
+        chmod +x build.sh
+        ./build.sh
+      shell: bash
+    
+    - name: Create archive
+      run: tar -czf "${{ github.event.repository.name }}-${{ matrix.platform }}-standalone.tar.gz" cli.dist/
+      shell: bash
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ github.event.repository.name }}-${{ matrix.platform }}-standalone
+        path: ${{ github.event.repository.name }}-${{ matrix.platform }}-standalone.tar.gz
+        if-no-files-found: error
+
+  create-release:
+    name: Create GitHub Release
+    needs: [version-and-tag, build-onefile, build-standalone]
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: master
+    
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+    
+    - name: Prepare release assets
+      run: |
+        mkdir -p release-assets
+        find artifacts -type f -exec cp {} release-assets/ \;
+        ls -lah release-assets/
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ needs.version-and-tag.outputs.tag_name }}
+        files: release-assets/*
+        generate_release_notes: true
+        draft: false
+        prerelease: ${{ contains(needs.version-and-tag.outputs.new_version, 'alpha') || contains(needs.version-and-tag.outputs.new_version, 'beta') || contains(needs.version-and-tag.outputs.new_version, 'rc') }}
