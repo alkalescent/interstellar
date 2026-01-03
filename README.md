@@ -24,11 +24,24 @@ Love this tool? Your support means the world! ❤️
 | **₿ BTC** | `bc1qwn7ea6s8wqx66hl5rr2supk4kv7qtcxnlqcqfk` | ![BTC](assets/qr_btc.png) |
 | **Ξ ETH** | `0x7cdB1861AC1B4385521a6e16dF198e7bc43fDE5f` | ![ETH](assets/qr_eth.png) |
 
-<!-- Alternative: QR codes below table (choose one layout and remove the other) -->
-<p align="center">
-  <img src="assets/qr_btc.png" alt="BTC" width="120" />
-  <img src="assets/qr_eth.png" alt="ETH" width="120" />
-</p>
+<!-- Alternative: HTML table with sized QR codes (choose one layout and remove the other) -->
+<table align="center">
+  <tr>
+    <th>Currency</th>
+    <th>Address</th>
+    <th>QR</th>
+  </tr>
+  <tr>
+    <td><strong>₿ BTC</strong></td>
+    <td><code>bc1qwn7ea6s8wqx66hl5rr2supk4kv7qtcxnlqcqfk</code></td>
+    <td><img src="assets/qr_btc.png" width="80" /></td>
+  </tr>
+  <tr>
+    <td><strong>Ξ ETH</strong></td>
+    <td><code>0x7cdB1861AC1B4385521a6e16dF198e7bc43fDE5f</code></td>
+    <td><img src="assets/qr_eth.png" width="80" /></td>
+  </tr>
+</table>
 
 ## 📦 Installation
 
