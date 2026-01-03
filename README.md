@@ -7,7 +7,7 @@
 
 A command-line tool for managing cryptocurrency mnemonics using BIP39 and SLIP39 standards. This tool allows you to split, combine, and convert mnemonic phrases for secure key management.
 
-## Features
+## ✨ Features
 
 - **BIP39 Support**: Generate, validate, and split BIP39 mnemonic phrases
 - **SLIP39 Support**: Create Shamir Secret Sharing (SLIP39) shares from mnemonics
@@ -24,7 +24,7 @@ Love this tool? Your support means the world! ❤️
 | **₿ BTC** | `YOUR_BTC_ADDRESS_HERE` |
 | **Ξ ETH** | `YOUR_ETH_ADDRESS_HERE` |
 
-## Installation
+## 📦 Installation
 
 ### From PyPI (Recommended)
 
@@ -50,7 +50,7 @@ From the repository root:
 
 This creates a standalone executable at `cli.dist/interstellar`.
 
-## Usage
+## 🚀 Usage
 
 The CLI provides two main commands: `deconstruct` and `reconstruct`.
 
@@ -155,7 +155,7 @@ interstellar reconstruct \
 interstellar reconstruct --filename shares.txt --standard SLIP39
 ```
 
-## File Format
+## 📁 File Format
 
 ### Input Files
 
@@ -200,7 +200,7 @@ interstellar reconstruct --filename shares.txt | jq -r '.mnemonic'
 interstellar deconstruct --mnemonic "word1 ..." > output.json
 ```
 
-## Testing
+## 🧪 Testing
 
 Run the test suite:
 ```bash
@@ -212,7 +212,7 @@ Run with coverage reporting (requires 90% coverage):
 uv run python -m pytest --cov --cov-report=term-missing --cov-fail-under=90
 ```
 
-## Security Notes
+## 🔐 Security Notes
 
 ⚠️ **Important Security Considerations:**
 
@@ -223,7 +223,7 @@ uv run python -m pytest --cov --cov-report=term-missing --cov-fail-under=90
 - Always verify reconstructed mnemonics match the original
 - This tool is for educational and personal use only
 
-## Architecture
+## 🏗️ Architecture
 
 The CLI consists of the following modules:
 
@@ -240,7 +240,7 @@ The CLI consists of the following modules:
   - SLIP39 share creation and reconstruction
   - CLI integration tests
 
-## Examples
+## 📖 Examples
 
 ### Secure Backup Strategy
 
@@ -270,7 +270,7 @@ interstellar reconstruct \
   --standard SLIP39
 ```
 
-## Dependencies
+## 📚 Dependencies
 
 - `hdwallet`: HD wallet generation and derivation
 - `mnemonic`: BIP39 mnemonic implementation
@@ -278,6 +278,6 @@ interstellar reconstruct \
 - `typer`: Modern CLI framework
 - `requests`: HTTP client
 
-## License
+## 📄 License
 
 MIT License - see [LICENSE](LICENSE) for details.
