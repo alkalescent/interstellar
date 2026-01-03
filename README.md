@@ -19,10 +19,16 @@ A command-line tool for managing cryptocurrency mnemonics using BIP39 and SLIP39
 
 Love this tool? Your support means the world! ❤️
 
-| Currency | Address |
-|----------|---------|
-| **₿ BTC** | `bc1qwn7ea6s8wqx66hl5rr2supk4kv7qtcxnlqcqfk` |
-| **Ξ ETH** | `0x7cdB1861AC1B4385521a6e16dF198e7bc43fDE5f` |
+| Currency | Address | QR |
+|----------|---------|:--:|
+| **₿ BTC** | `bc1qwn7ea6s8wqx66hl5rr2supk4kv7qtcxnlqcqfk` | ![BTC](assets/qr_btc.png) |
+| **Ξ ETH** | `0x7cdB1861AC1B4385521a6e16dF198e7bc43fDE5f` | ![ETH](assets/qr_eth.png) |
+
+<!-- Alternative: QR codes below table (choose one layout and remove the other) -->
+<p align="center">
+  <img src="assets/qr_btc.png" alt="BTC" width="120" />
+  <img src="assets/qr_eth.png" alt="ETH" width="120" />
+</p>
 
 ## 📦 Installation
 
