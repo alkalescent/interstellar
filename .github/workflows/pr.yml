@@ -19,6 +19,8 @@ jobs:
     name: Generate QR Codes
     needs: test
     runs-on: ubuntu-latest
+    # Skip if triggered by QR code update commit to prevent infinite loop
+    if: "!contains(github.event.head_commit.message, '[skip-qr]')"
     steps:
     - uses: actions/checkout@v4
       with:
