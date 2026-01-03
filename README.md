@@ -21,8 +21,8 @@ Love this tool? Your support means the world! ❤️
 
 | Currency | Address |
 |----------|---------|
-| **₿ BTC** | `YOUR_BTC_ADDRESS_HERE` |
-| **Ξ ETH** | `YOUR_ETH_ADDRESS_HERE` |
+| **₿ BTC** | `bc1qwn7ea6s8wqx66hl5rr2supk4kv7qtcxnlqcqfk` |
+| **Ξ ETH** | `0x7cdB1861AC1B4385521a6e16dF198e7bc43fDE5f` |
 
 ## 📦 Installation
 
