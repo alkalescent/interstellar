@@ -93,7 +93,7 @@ jobs:
         BASE_VERSION="${BASE_TAG#v}"
         BASE_VERSION="${BASE_VERSION%-rc.*}"
         # Create unique prerelease version: {base}rc{pr_number}.dev{run_number}
-        # e.g., 1.2.0rc42.7 for PR #42, run #7
+        # e.g., 1.2.0rc42.dev7 for PR #42, run #7
         PYPI_VERSION="${BASE_VERSION}rc${{ github.event.pull_request.number }}.dev${{ github.run_number }}"
         sed -i "s/^version = .*/version = \"$PYPI_VERSION\"/" pyproject.toml
         echo "Tag version: $NEW_TAG"
