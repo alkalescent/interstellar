@@ -285,11 +285,10 @@ interstellar reconstruct \
 
 ## 📚 Dependencies
 
-- `hdwallet`: HD wallet generation and derivation
+- `hdwallet`: HD wallet generation and derivation (subdependency of slip39)
 - `mnemonic`: BIP39 mnemonic implementation
 - `slip39`: SLIP39 Shamir Secret Sharing
 - `typer`: Modern CLI framework
-- `requests`: HTTP client
 
 ## 📄 License
 
