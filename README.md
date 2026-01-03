@@ -15,6 +15,15 @@ A command-line tool for managing cryptocurrency mnemonics using BIP39 and SLIP39
 - **Share Reconstruction**: Reconstruct mnemonics from SLIP39 shares with threshold requirements
 - **Digit Mode**: Convert mnemonics to/from numeric format for easier backup
 
+## Support the Project
+
+If you find this tool useful, consider supporting development:
+
+| Currency | Address |
+|----------|---------|
+| **BTC** | `YOUR_BTC_ADDRESS_HERE` |
+| **ETH** | `YOUR_ETH_ADDRESS_HERE` |
+
 ## Installation
 
 ### From PyPI (Recommended)
