@@ -1,4 +1,5 @@
 import pytest
+from hdwallet.mnemonics import SLIP39Mnemonic
 from conftest import SPLIT_PARTS, WORDS_24, assert_eth_addr
 
 from tools import BIP39, SLIP39
@@ -90,6 +91,7 @@ class TestSLIP39:
     def test_gen_20_words(self):
         """Test generating a 20-word mnemonic."""
         mnemo = self.slip39.generate(WORDS_20)
+        assert len(SLIP39Mnemonic.decode(mnemo)) == 32
         words = mnemo.split()
         assert len(words) == WORDS_20
 
