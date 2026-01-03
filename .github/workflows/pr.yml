@@ -19,6 +19,8 @@ jobs:
     name: Generate QR Codes
     needs: test
     runs-on: ubuntu-latest
+    # Skip if triggered by QR code update commit to prevent infinite loop
+    if: "!contains(github.event.head_commit.message, '[skip-qr]')"
     steps:
     - uses: actions/checkout@v4
       with:
@@ -45,7 +47,7 @@ jobs:
         git config user.email "github-actions[bot]@users.noreply.github.com"
         git add assets/
         if ! git diff --cached --quiet; then
-          git commit -m "Update QR codes [skip ci]"
+          git commit -m "Update QR codes [skip-qr]"
           git push
         fi
 
@@ -85,8 +87,14 @@ jobs:
     
     - name: Update version in pyproject.toml
       run: |
-        # Strip 'v' prefix for PyPI-compatible version
-        PYPI_VERSION="${NEW_TAG#v}"
+        # Get base version from tag action (e.g., v1.2.0-rc.0)
+        BASE_TAG="${NEW_TAG}"
+        # Strip 'v' prefix and '-rc.X' suffix to get base version (e.g., 1.2.0)
+        BASE_VERSION="${BASE_TAG#v}"
+        BASE_VERSION="${BASE_VERSION%-rc.*}"
+        # Create unique prerelease version: {base}rc{pr_number}.dev{run_number}
+        # e.g., 1.2.0rc42.dev7 for PR #42, run #7
+        PYPI_VERSION="${BASE_VERSION}rc${{ github.event.pull_request.number }}.dev${{ github.run_number }}"
         sed -i "s/^version = .*/version = \"$PYPI_VERSION\"/" pyproject.toml
         echo "Tag version: $NEW_TAG"
         echo "PyPI version: $PYPI_VERSION"
