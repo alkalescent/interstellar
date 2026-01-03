@@ -68,8 +68,13 @@ def deconstruct(
     ] = False,
 ):
     cli.enforce_standard(standard)
-    if not mnemonic:
-        mnemonic = cli.get_mnemos(filename)[0][0]
+    if not mnemonic and filename:
+        try:
+            mnemos = cli.get_mnemos(filename)
+            if mnemos and mnemos[0]:
+                mnemonic = mnemos[0][0]
+        except FileNotFoundError:
+            raise typer.BadParameter(f"File not found: {filename}")
     if not mnemonic:
         raise ValueError("Mnemonic is required")
 
