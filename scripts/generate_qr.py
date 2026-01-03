@@ -97,11 +97,10 @@ def main():
             print(f"  - Unchanged: {output_path}")
 
     if changes:
-        print("\nQR codes updated!")
-        sys.exit(0)
+        print("QR codes updated!")
     else:
-        print("\nNo changes needed.")
-        sys.exit(0)
+        print("No changes needed.")
+    sys.exit(0)
 
 
 if __name__ == "__main__":
