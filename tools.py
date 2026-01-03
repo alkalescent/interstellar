@@ -37,6 +37,9 @@ class BIP39:
             raise ValueError("Invalid BIP39 mnemo.")
         # Convert the mnemo to entropy
         entropy = self.mnemo.to_entropy(mnemo)
+        # Check if the entropy split is valid
+        if len(entropy) % split:
+            raise ValueError("Invalid BIP39 entropy split.")
         # Split the entropy into split parts
         size = len(entropy) // split
         entropies = [entropy[i * size : (i + 1) * size] for i in range(split)]
