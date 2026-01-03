@@ -17,9 +17,9 @@ def parse_addresses_from_readme(readme_path: Path) -> dict[str, str]:
     """
     content = readme_path.read_text()
 
-    # Match table rows with currency and backtick-wrapped address
-    # Pattern: | **₿ BTC** | `address` | or | **Ξ ETH** | `address` |
-    pattern = r"\|\s*\*\*[₿Ξ]?\s*(\w+)\*\*\s*\|\s*`([^`]+)`"
+    # Match HTML table rows with currency and code-wrapped address
+    # Pattern: <td><strong>₿ BTC</strong></td> ... <td><code>address</code></td>
+    pattern = r"<td><strong>[₿Ξ]?\s*(\w+)</strong></td>\s*<td><code>([^<]+)</code></td>"
 
     addresses = {}
     for match in re.finditer(pattern, content):
