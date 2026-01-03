@@ -91,6 +91,8 @@ class TestSLIP39:
     def test_gen_20_words(self):
         """Test generating a 20-word mnemonic."""
         mnemo = self.slip39.generate(WORDS_20)
+        # Decode the mnemonic to check if it is valid.
+        # Otherwise, it will raise an exception.
         assert len(SLIP39Mnemonic.decode(mnemo)) == 32
         words = mnemo.split()
         assert len(words) == WORDS_20
