@@ -410,6 +410,46 @@ class TestRoundtrip:
         finally:
             os.unlink(temp_file)
 
+    def test_bip39_with_digits(self):
+        """Test BIP39-only roundtrip with digits mode."""
+        # Deconstruct to BIP39 with digits
+        result = runner.invoke(
+            app,
+            ["deconstruct", "--mnemonic", self.mnemo_24, "--standard", "BIP39", "--digits"],
+        )
+
+        assert result.exit_code == 0
+        decon_output = json.loads(result.stdout)
+        assert isinstance(decon_output, list)
+        assert len(decon_output) == 2
+        assert decon_output[0]["digits"] is True
+        assert decon_output[1]["digits"] is True
+        # Verify mnemonics are in digit format (space-separated numbers)
+        first_mnemonic = decon_output[0]["mnemonic"]
+        assert all(char.isdigit() or char == " " for char in first_mnemonic)
+
+        # Create file with BIP39 digit parts (one per line)
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".txt") as f:
+            f.write(f"{decon_output[0]['mnemonic']}\n")
+            f.write(f"{decon_output[1]['mnemonic']}\n")
+            temp_file = f.name
+
+        try:
+            # Reconstruct from BIP39 digits
+            result = runner.invoke(
+                app,
+                ["reconstruct", "--filename", temp_file, "--standard", "BIP39", "--digits"],
+            )
+
+            assert result.exit_code == 0
+            recon_output = json.loads(result.stdout)
+
+            # Verify roundtrip
+            assert recon_output["mnemonic"] == self.mnemo_24
+            assert recon_output["digits"] is True
+        finally:
+            os.unlink(temp_file)
+
     def test_with_digits(self):
         """Test full roundtrip with digits mode."""
         # Deconstruct with digits

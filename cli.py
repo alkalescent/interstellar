@@ -84,15 +84,22 @@ def deconstruct(
 
     bip_parts = cli.bip39.deconstruct(mnemonic, split)
     if standard.upper() == "BIP39":
-        output = [
-            {
-                "standard": "BIP39",
-                "mnemonic": bip_part,
-                "eth_addr": cli.bip39.eth(bip_part),
-                "digits": digits,
-            }
-            for bip_part in bip_parts
-        ]
+        output = []
+        for bip_part in bip_parts:
+            mnemonic_output = bip_part
+            if digits:
+                # Convert words to 1-indexed digits
+                mnemonic_output = " ".join(
+                    str(cli.bip39.map[word]) for word in bip_part.split()
+                )
+            output.append(
+                {
+                    "standard": "BIP39",
+                    "mnemonic": mnemonic_output,
+                    "eth_addr": cli.bip39.eth(bip_part),
+                    "digits": digits,
+                }
+            )
         typer.echo(json.dumps(output))
         raise typer.Exit(code=0)
     else:
@@ -157,9 +164,10 @@ def reconstruct(
     else:  # BIP39
         shares = [part for group in shares for part in group]
         if digits:
+            # Convert 1-indexed digits back to words
             shares = [
                 " ".join(cli.bip39.words[int(idx) - 1] for idx in share.split())
-                for share in shares[0]
+                for share in shares
             ]
     reconstructed = cli.bip39.reconstruct(shares)
     output = {
