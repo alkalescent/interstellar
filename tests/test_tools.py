@@ -1,6 +1,6 @@
 import pytest
-from hdwallet.mnemonics import SLIP39Mnemonic
 from conftest import SPLIT_PARTS, WORDS_24, assert_eth_addr
+from hdwallet.mnemonics import SLIP39Mnemonic
 
 from tools import BIP39, SLIP39
 

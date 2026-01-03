@@ -10,13 +10,13 @@ from pathlib import Path
 import qrcode
 
 
-def parse_addresses_from_readme(readme_path: Path) -> dict[str, str]:
+def parse_addresses(readme: Path) -> dict[str, str]:
     """Parse donation addresses from README.md.
 
     Looks for backtick-wrapped addresses in the donation table.
     Returns dict mapping currency code to address.
     """
-    content = readme_path.read_text()
+    content = readme.read_text()
 
     # Match HTML table rows with currency and code-wrapped address
     # Pattern: <td><strong>₿ BTC</strong></td> ... <td><code>address</code></td>
@@ -71,14 +71,14 @@ def main():
     """Main entry point."""
     # Script is in scripts/, repo root is one level up
     repo_root = Path(__file__).parent.parent
-    readme_path = repo_root / "README.md"
+    readme = repo_root / "README.md"
     assets_dir = repo_root / "assets"
 
-    if not readme_path.exists():
+    if not readme.exists():
         print("ERROR: README.md not found", file=sys.stderr)
         sys.exit(1)
 
-    addresses = parse_addresses_from_readme(readme_path)
+    addresses = parse_addresses(readme)
 
     if not addresses:
         print("WARNING: No donation addresses found in README.md")
