@@ -5,6 +5,7 @@ from tools import BIP39, SLIP39
 
 # Test constants
 WORDS_12 = 12
+WORDS_20 = 20
 BIP39_WORDLIST_SIZE = 2048
 SLIP39_WORDLIST_SIZE = 1024
 SHARES_REQUIRED = 2
@@ -84,16 +85,17 @@ class TestSLIP39:
     def setup_method(self):
         """Setup test fixtures."""
         self.slip39 = SLIP39()
+        self.bip39 = BIP39()
 
-    def test_gen_24_words(self):
-        """Test generating a 24-word mnemonic."""
-        mnemo = self.slip39.generate(WORDS_24)
+    def test_gen_20_words(self):
+        """Test generating a 20-word mnemonic."""
+        mnemo = self.slip39.generate(WORDS_20)
         words = mnemo.split()
-        assert len(words) == WORDS_24
+        assert len(words) == WORDS_20
 
     def test_24_word_roundtrip(self):
         """Test deconstructing and reconstructing a 24-word mnemonic."""
-        mnemo = self.slip39.generate(WORDS_24)
+        mnemo = self.bip39.generate(WORDS_24)
         shares = self.slip39.deconstruct(
             mnemo, required=SHARES_REQUIRED, total=SHARES_TOTAL
         )
@@ -106,7 +108,7 @@ class TestSLIP39:
 
     def test_share_combos(self):
         """Test reconstruction with different share combinations."""
-        mnemo = self.slip39.generate(WORDS_24)
+        mnemo = self.bip39.generate(WORDS_24)
         shares = self.slip39.deconstruct(
             mnemo, required=SHARES_REQUIRED, total=SHARES_TOTAL
         )
@@ -193,7 +195,7 @@ class TestIntegration:
     def test_slip39_iterations(self):
         """Test SLIP39 multiple iterations to ensure consistency."""
         for _ in range(TEST_ITERATIONS):
-            mnemo = self.slip39.generate(WORDS_24)
+            mnemo = self.bip39.generate(WORDS_24)
             shares = self.slip39.deconstruct(
                 mnemo, required=SHARES_REQUIRED, total=SHARES_TOTAL
             )

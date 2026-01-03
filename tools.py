@@ -5,20 +5,14 @@ from hdwallet.mnemonics import (
     BIP39Mnemonic,
     SLIP39Mnemonic,
     BIP39_MNEMONIC_LANGUAGES,
+    SLIP39_MNEMONIC_LANGUAGES,
 )
 from hdwallet.symbols import ETH
 from mnemonic import Mnemonic
 from shamir_mnemonic.wordlist import WORDLIST
 
 
-class MnemonicBase:
-    def generate(self, num_words: int) -> str:
-        """Generate a random mnemonic of BIP39 words."""
-        mnemo = BIP39Mnemonic.from_words(num_words, BIP39_MNEMONIC_LANGUAGES.ENGLISH)
-        return mnemo
-
-
-class BIP39(MnemonicBase):
+class BIP39:
     """BIP39 class to handle mnemonic generation and validation."""
 
     def __init__(self):
@@ -56,9 +50,14 @@ class BIP39(MnemonicBase):
         wallet = HDWallet(symbol=ETH, cryptocurrency=Ethereum).from_mnemonic(mnemo)
         addr = wallet.address()
         return addr
+    
+    def generate(self, num_words: int) -> str:
+        """Generate a random mnemonic of BIP39 words."""
+        mnemo = BIP39Mnemonic.from_words(num_words, BIP39_MNEMONIC_LANGUAGES.ENGLISH)
+        return mnemo
 
 
-class SLIP39(MnemonicBase):
+class SLIP39:
     """
     SLIP39 implementation for generating and reconstructing
     mnemonic phrases.
@@ -96,3 +95,8 @@ class SLIP39(MnemonicBase):
         wallet = HDWallet(symbol=ETH, cryptocurrency=Ethereum).from_mnemonic(mnemo)
         addr = wallet.address()
         return addr
+    
+    def generate(self, num_words: int) -> str:
+        """Generate a random mnemonic of SLIP39 words."""
+        mnemo = SLIP39Mnemonic.from_words(num_words, SLIP39_MNEMONIC_LANGUAGES.ENGLISH)
+        return mnemo
