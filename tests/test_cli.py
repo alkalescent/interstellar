@@ -354,17 +354,11 @@ class TestRoundtrip:
         decon_output = json.loads(result.stdout)
 
         # Extract 5 shares from each group
-        shares_list = (
-            decon_output["shares"][0][:5] + [";"] + decon_output["shares"][1][:5]
+        shares_str = (
+            ",".join(decon_output["shares"][0][:5])
+            + ";"
+            + ",".join(decon_output["shares"][1][:5])
         )
-        shares_str = ""
-        for i, share in enumerate(shares_list):
-            if share == ";":
-                shares_str += ";"
-            else:
-                shares_str += share
-                if i < len(shares_list) - 1 and shares_list[i + 1] != ";":
-                    shares_str += ","
 
         # Reconstruct
         result = runner.invoke(app, ["reconstruct", "--shares", shares_str])
