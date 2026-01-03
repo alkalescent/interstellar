@@ -4,6 +4,7 @@ from hdwallet.cryptocurrencies import Ethereum
 from hdwallet.mnemonics import (
     BIP39Mnemonic,
     SLIP39Mnemonic,
+    BIP39_MNEMONIC_LANGUAGES,
 )
 from hdwallet.symbols import ETH
 from mnemonic import Mnemonic
@@ -13,7 +14,7 @@ from shamir_mnemonic.wordlist import WORDLIST
 class MnemonicBase:
     def generate(self, num_words: int) -> str:
         """Generate a random mnemonic of BIP39 words."""
-        mnemo = self.mnemo.generate(num_words * 32 // 3)
+        mnemo = BIP39Mnemonic.from_words(num_words, BIP39_MNEMONIC_LANGUAGES.ENGLISH)
         return mnemo
 
 
