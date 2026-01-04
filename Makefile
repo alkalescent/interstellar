@@ -20,7 +20,7 @@ format:
 test:
 	uv run python -m pytest
 
-test-cov:
+cov:
 	uv run python -m pytest --cov --cov-report=term-missing --cov-fail-under=90
 
 build:
