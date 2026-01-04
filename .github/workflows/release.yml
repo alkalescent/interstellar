@@ -189,14 +189,14 @@ jobs:
       shell: bash
     
     - name: Create archive
-      run: tar -czf "${{ github.event.repository.name }}-${{ matrix.platform }}-standalone.tar.gz" cli.dist/
+      run: tar -czf "${{ github.event.repository.name }}-${{ matrix.platform }}.tar.gz" cli.dist/
       shell: bash
     
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ github.event.repository.name }}-${{ matrix.platform }}-standalone
-        path: ${{ github.event.repository.name }}-${{ matrix.platform }}-standalone.tar.gz
+        name: ${{ github.event.repository.name }}-${{ matrix.platform }}
+        path: ${{ github.event.repository.name }}-${{ matrix.platform }}.tar.gz
         if-no-files-found: error
 
   create-release:
@@ -259,14 +259,14 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
         include:
           - os: ubuntu-latest
-            artifact: interstellar-linux-onefile
-            binary: interstellar
+            artifact_suffix: linux-onefile
+            binary_ext: ''
           - os: macos-latest
-            artifact: interstellar-macos-onefile
-            binary: interstellar
+            artifact_suffix: macos-onefile
+            binary_ext: ''
           - os: windows-latest
-            artifact: interstellar-windows-onefile.exe
-            binary: interstellar.exe
+            artifact_suffix: windows-onefile.exe
+            binary_ext: .exe
     
     steps:
     - uses: actions/checkout@v4
@@ -278,11 +278,11 @@ jobs:
     - name: Download binary
       uses: actions/download-artifact@v4
       with:
-        name: ${{ matrix.artifact }}
+        name: ${{ github.event.repository.name }}-${{ matrix.artifact_suffix }}
     
     - name: Make executable
-      run: chmod +x ./${{ matrix.binary }} || true
+      run: chmod +x ./${{ github.event.repository.name }}${{ matrix.binary_ext }} || true
       shell: bash
     
     - name: Run smoke tests
-      run: python scripts/smoke_test.py ./${{ matrix.binary }}
+      run: python scripts/smoke_test.py ./${{ github.event.repository.name }}${{ matrix.binary_ext }}
