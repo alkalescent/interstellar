@@ -1,6 +1,6 @@
 [project]
 name = "interstellar"
-version = "1.1.0"
+version = "0.0.0"  # Injected from git tag at build time
 description = "A command-line tool for managing cryptocurrency mnemonics using BIP39 and SLIP39 standards"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -31,7 +31,7 @@ Issues = "https://github.com/alkalescent/interstellar/issues"
 py-modules = ["cli", "tools"]
 
 [dependency-groups]
-dev = ["pytest", "pytest-xdist", "pytest-cov", "nuitka", "ordered-set", "ruff"]
+dev = ["pytest", "pytest-xdist", "pytest-cov", "nuitka", "ordered-set", "ruff", "packaging"]
 
 [tool.pytest.ini_options]
 addopts = "-n auto"

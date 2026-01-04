@@ -3,6 +3,7 @@ import os
 import tempfile
 
 from conftest import SPLIT_PARTS, WORDS_24, assert_eth_addr
+from packaging.version import parse as parse_version
 from typer.testing import CliRunner
 
 from cli import app
@@ -15,6 +16,20 @@ def assert_success_with_json(result) -> dict:
     """Assert command succeeded and return parsed JSON output."""
     assert result.exit_code == 0
     return json.loads(result.stdout)
+
+
+class TestVersion:
+    """Test the version CLI command."""
+
+    def test_version(self):
+        """Test version command returns a valid version string."""
+        result = runner.invoke(app, ["version"])
+        assert result.exit_code == 0
+        version_str = result.stdout.strip()
+        assert version_str  # Not empty
+        # Validate it's a proper PEP 440 version string
+        parsed = parse_version(version_str)
+        assert parsed.release, "Version must have at least one release segment"
 
 
 class TestDeconstruct:

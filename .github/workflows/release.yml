@@ -49,14 +49,8 @@ jobs:
         grep "^version" pyproject.toml
       env:
         NEW_TAG: ${{ steps.version.outputs.new_tag }}
-    
-    - name: Commit version bump
-      run: |
-        git config user.name "github-actions[bot]"
-        git config user.email "github-actions[bot]@users.noreply.github.com"
-        git add pyproject.toml
-        git commit -m "Bump version to ${{ steps.version.outputs.new_tag }} [skip ci]"
-        git push
+    # Note: Version is injected locally for this job only.
+    # Not committed to repo - downstream jobs inject version from tag.
 
   publish-pypi:
     name: Publish to PyPI
@@ -82,6 +76,14 @@ jobs:
     
     - name: Install uv
       uses: astral-sh/setup-uv@v4
+    
+    - name: Inject version from tag
+      run: |
+        PYPI_VERSION="${{ needs.version-and-tag.outputs.new_version }}"
+        PYPI_VERSION="${PYPI_VERSION#v}"  # Strip 'v' prefix
+        sed -i "s/^version = .*/version = \"$PYPI_VERSION\"/" pyproject.toml
+        echo "PyPI version: $PYPI_VERSION"
+        grep "^version" pyproject.toml
     
     - name: Build distributions
       run: |

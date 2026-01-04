@@ -1,10 +1,15 @@
 import json
 import logging
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as get_version
+from pathlib import Path
 from typing import Annotated
 
 import typer
 
 from tools import BIP39, SLIP39
+
+PACKAGE_NAME = Path(__file__).parent.name
 
 logging.getLogger("slip39").setLevel(logging.ERROR)
 
@@ -181,8 +186,14 @@ def reconstruct(
     raise typer.Exit(code=0)
 
 
+@app.command()
+def version():
+    """Show the installed version."""
+    try:
+        typer.echo(get_version(PACKAGE_NAME))
+    except PackageNotFoundError:
+        typer.echo("0.0.0")
+
+
 if __name__ == "__main__":
     app()
-# TODO: add github workflow for testing and release with checksum
-# TODO: release on PyPI w name kintsugi alt
-# TODO: message PyPi user

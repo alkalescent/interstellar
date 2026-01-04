@@ -403,7 +403,7 @@ wheels = [
 
 [[package]]
 name = "interstellar"
-version = "1.1.0"
+version = "0.0.0"
 source = { virtual = "." }
 dependencies = [
     { name = "mnemonic" },
@@ -415,6 +415,7 @@ dependencies = [
 dev = [
     { name = "nuitka" },
     { name = "ordered-set" },
+    { name = "packaging" },
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "pytest-xdist" },
@@ -432,6 +433,7 @@ requires-dist = [
 dev = [
     { name = "nuitka" },
     { name = "ordered-set" },
+    { name = "packaging" },
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "pytest-xdist" },
