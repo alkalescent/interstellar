@@ -17,6 +17,20 @@ def assert_success_with_json(result) -> dict:
     return json.loads(result.stdout)
 
 
+class TestVersion:
+    """Test the version CLI command."""
+
+    def test_version(self):
+        """Test version command returns a version string."""
+        result = runner.invoke(app, ["version"])
+        assert result.exit_code == 0
+        # Should be a version string like "0.0.0" or "1.2.0"
+        version = result.stdout.strip()
+        assert version  # Not empty
+        parts = version.split(".")
+        assert len(parts) >= 2  # At least major.minor
+
+
 class TestDeconstruct:
     """Test the deconstruct CLI command."""
 
