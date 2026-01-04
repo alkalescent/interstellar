@@ -1,8 +1,9 @@
 import json
 import logging
+from importlib.metadata import version
 from typing import Annotated
+
 import typer
-from importlib.metadata import version as get_version
 
 from tools import BIP39, SLIP39
 
@@ -181,10 +182,10 @@ def reconstruct(
     raise typer.Exit(code=0)
 
 
-@app.command()
-def version():
+@app.command(name="version")
+def _():
     """Show the installed version."""
-    typer.echo(get_version("interstellar"))
+    typer.echo(version("interstellar"))
 
 
 if __name__ == "__main__":
