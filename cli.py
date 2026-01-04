@@ -1,8 +1,8 @@
 import json
 import logging
 from typing import Annotated
-
 import typer
+from importlib.metadata import version as get_version
 
 from tools import BIP39, SLIP39
 
@@ -181,8 +181,11 @@ def reconstruct(
     raise typer.Exit(code=0)
 
 
+@app.command()
+def version():
+    """Show the installed version."""
+    typer.echo(get_version("interstellar"))
+
+
 if __name__ == "__main__":
     app()
-# TODO: add github workflow for testing and release with checksum
-# TODO: release on PyPI w name kintsugi alt
-# TODO: message PyPi user
