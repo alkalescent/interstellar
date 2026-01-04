@@ -39,7 +39,7 @@ jobs:
       run: uv sync
     
     - name: Generate QR codes
-      run: uv run python scripts/generate_qr.py
+      run: uv run python scripts/qr.py
     
     - name: Commit if changed
       run: |
@@ -210,4 +210,4 @@ jobs:
       continue-on-error: true  # TestPyPI may not have indexed yet
     
     - name: Run smoke tests
-      run: python scripts/smoke_test.py ${{ github.event.repository.name }}
+      run: python tests/smoke.py ${{ github.event.repository.name }}

@@ -248,7 +248,7 @@ jobs:
       run: pip install ${{ github.event.repository.name }}==${{ needs.version-and-tag.outputs.pypi_version }}
     
     - name: Run smoke tests
-      run: python scripts/smoke_test.py ${{ github.event.repository.name }}
+      run: python tests/smoke.py ${{ github.event.repository.name }}
 
   smoke-test-binaries:
     name: Smoke Test Binary (${{ matrix.os }})
@@ -285,4 +285,4 @@ jobs:
       shell: bash
     
     - name: Run smoke tests
-      run: python scripts/smoke_test.py ./${{ github.event.repository.name }}${{ matrix.binary_ext }}
+      run: python tests/smoke.py ./${{ github.event.repository.name }}${{ matrix.binary_ext }}

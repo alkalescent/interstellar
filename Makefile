@@ -27,7 +27,7 @@ build:
 	./scripts/build.sh
 
 qr:
-	uv run python scripts/generate_qr.py
+	uv run python scripts/qr.py
 
 clean:
 	rm -rf cli.dist/ dist/ build/ *.egg-info/ .coverage coverage.xml
