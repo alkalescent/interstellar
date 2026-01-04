@@ -3,6 +3,7 @@ import os
 import tempfile
 
 from conftest import SPLIT_PARTS, WORDS_24, assert_eth_addr
+
 # from packaging.version import parse
 from typer.testing import CliRunner
 
