@@ -7,7 +7,7 @@ from typing import Annotated
 
 import typer
 
-from tools import BIP39, SLIP39
+from interstellar.tools import BIP39, SLIP39
 
 PACKAGE_NAME = Path(__file__).parent.name
 

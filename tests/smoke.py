@@ -12,6 +12,11 @@ def run(cmd: list[str]) -> subprocess.CompletedProcess:
     return subprocess.run(cmd, capture_output=True, text=True, check=True)
 
 
+def get_package_name() -> str:
+    """Get package name from directory structure."""
+    return Path(__file__).resolve().parts[-3]
+
+
 def test_version(cmd: list[str]) -> None:
     """Test version command works."""
     result = run([*cmd, "version"])
@@ -29,15 +34,48 @@ def test_help(cmd: list[str]) -> None:
     print("✓ help")
 
 
+def test_module_invocation() -> None:
+    """Test python -m <package> works."""
+    package = get_package_name()
+    result = run([sys.executable, "-m", package, "version"])
+    version = result.stdout.strip()
+    assert version, "module version output empty"
+    print(f"✓ python -m {package} version: {version}")
+
+
+def test_imports() -> None:
+    """Test package imports work correctly."""
+    package = get_package_name()
+    # Use exec to dynamically import based on package name
+    exec_globals: dict = {}
+
+    # Test main package imports
+    exec(f"from {package} import BIP39, SLIP39, __version__", exec_globals)
+    assert exec_globals["__version__"], "version is empty"
+
+    # Test submodule imports
+    exec(f"from {package}.tools import BIP39 as BIP39Tool", exec_globals)
+    exec(
+        f"from {package}.cli import app, deconstruct, reconstruct, version",
+        exec_globals,
+    )
+
+    print(f"✓ imports: BIP39, SLIP39, __version__={exec_globals['__version__']}")
+
+
 def main() -> None:
     """Run smoke tests."""
     # Command can be passed as args (e.g., "./binary" or "package")
-    levels_up = 3
-    package = Path(__file__).resolve().parts[-levels_up]
+    package = get_package_name()
     cmd = sys.argv[1:] if len(sys.argv) > 1 else [str(package)]
 
     print(f"Running smoke tests with: {' '.join(cmd)}")
     try:
+        # Always run import and module tests (package-level verification)
+        test_imports()
+        test_module_invocation()
+
+        # Run CLI tests with provided command
         test_version(cmd)
         test_help(cmd)
         print("All smoke tests passed!")

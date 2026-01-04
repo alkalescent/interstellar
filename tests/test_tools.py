@@ -2,7 +2,7 @@ import pytest
 from conftest import SPLIT_PARTS, WORDS_24, assert_eth_addr
 from hdwallet.mnemonics import SLIP39Mnemonic
 
-from tools import BIP39, SLIP39
+from interstellar.tools import BIP39, SLIP39
 
 # Test constants
 WORDS_12 = 12

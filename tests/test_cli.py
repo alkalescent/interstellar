@@ -6,8 +6,8 @@ from conftest import SPLIT_PARTS, WORDS_24, assert_eth_addr
 from packaging.version import parse as parse_version
 from typer.testing import CliRunner
 
-from cli import app
-from tools import BIP39, SLIP39
+from interstellar.cli import app
+from interstellar.tools import BIP39, SLIP39
 
 runner = CliRunner()
 
