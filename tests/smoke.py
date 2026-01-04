@@ -5,25 +5,24 @@ import subprocess
 import sys
 
 
-def run(cmd: list[str]) -> tuple[int, str, str]:
-    """Run a command and return (returncode, stdout, stderr)."""
-    result = subprocess.run(cmd, capture_output=True, text=True)
-    return result.returncode, result.stdout, result.stderr
+def run(cmd: list[str]) -> subprocess.CompletedProcess:
+    """Run a command and return the completed process. Raises on error."""
+    # Using check=True to automatically raise CalledProcessError on non-zero exit codes.
+    return subprocess.run(cmd, capture_output=True, text=True, check=True)
 
 
 def test_version(cmd: list[str]) -> None:
     """Test version command works."""
-    code, out, err = run([*cmd, "version"])
-    assert code == 0, f"version failed: {err}"
-    version = out.strip()
+    result = run([*cmd, "version"])
+    version = result.stdout.strip()
     assert version, "version output empty"
     print(f"✓ version: {version}")
 
 
 def test_help(cmd: list[str]) -> None:
     """Test help command works."""
-    code, out, err = run([*cmd, "--help"])
-    assert code == 0, f"help failed: {err}"
+    result = run([*cmd, "--help"])
+    out = result.stdout
     assert "deconstruct" in out, "missing deconstruct command"
     assert "reconstruct" in out, "missing reconstruct command"
     print("✓ help")
@@ -35,9 +34,19 @@ def main() -> None:
     cmd = sys.argv[1:] if len(sys.argv) > 1 else ["interstellar"]
 
     print(f"Running smoke tests with: {' '.join(cmd)}")
-    test_version(cmd)
-    test_help(cmd)
-    print("All smoke tests passed!")
+    try:
+        test_version(cmd)
+        test_help(cmd)
+        print("All smoke tests passed!")
+    except (subprocess.CalledProcessError, AssertionError) as e:
+        print("\nSmoke test failed!", file=sys.stderr)
+        if isinstance(e, subprocess.CalledProcessError):
+            print(f"Command '{' '.join(e.cmd)}' failed with exit code {e.returncode}.", file=sys.stderr)
+            if e.stderr:
+                print(f"Stderr:\n{e.stderr.strip()}", file=sys.stderr)
+        else:
+            print(f"Assertion failed: {e}", file=sys.stderr)
+        sys.exit(1)
 
 
 if __name__ == "__main__":
