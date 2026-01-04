@@ -55,6 +55,8 @@ jobs:
     name: Version Preview & TestPyPI
     needs: test  # Only run after tests pass
     runs-on: ubuntu-latest
+    outputs:
+      pypi_version: ${{ steps.set-version.outputs.pypi_version }}
     environment:
       name: testpypi
       url: https://test.pypi.org/p/${{ github.event.repository.name }}
@@ -86,6 +88,7 @@ jobs:
       uses: astral-sh/setup-uv@v4
     
     - name: Update version in pyproject.toml
+      id: set-version
       run: |
         # Get base version from tag action (e.g., v1.2.0-rc.0)
         BASE_TAG="${NEW_TAG}"
@@ -98,6 +101,7 @@ jobs:
         sed -i "s/^version = .*/version = \"$PYPI_VERSION\"/" pyproject.toml
         echo "Tag version: $NEW_TAG"
         echo "PyPI version: $PYPI_VERSION"
+        echo "pypi_version=$PYPI_VERSION" >> $GITHUB_OUTPUT
         grep "^version" pyproject.toml
       env:
         NEW_TAG: ${{ steps.version.outputs.new_tag }}
@@ -180,3 +184,30 @@ jobs:
             });
             console.log('Created new version comment');
           }
+
+  smoke-test-package:
+    name: Smoke Test Package
+    needs: version-preview
+    runs-on: ubuntu-latest
+    # Only run if TestPyPI publish succeeded
+    if: success()
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+    
+    - name: Wait for TestPyPI indexing
+      run: sleep 30
+    
+    - name: Install from TestPyPI
+      run: |
+        pip install --index-url https://test.pypi.org/simple/ \
+          --extra-index-url https://pypi.org/simple/ \
+          ${{ github.event.repository.name }}==${{ needs.version-preview.outputs.pypi_version }}
+      continue-on-error: true  # TestPyPI may not have indexed yet
+    
+    - name: Run smoke tests
+      run: python scripts/smoke_test.py ${{ github.event.repository.name }}
