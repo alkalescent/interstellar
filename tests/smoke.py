@@ -3,6 +3,7 @@
 
 import subprocess
 import sys
+from pathlib import Path
 
 
 def run(cmd: list[str]) -> subprocess.CompletedProcess:
@@ -30,8 +31,10 @@ def test_help(cmd: list[str]) -> None:
 
 def main() -> None:
     """Run smoke tests."""
-    # Command can be passed as args (e.g., "./binary" or "interstellar")
-    cmd = sys.argv[1:] if len(sys.argv) > 1 else ["interstellar"]
+    # Command can be passed as args (e.g., "./binary" or "package")
+    levels_up = 3
+    package = Path(__file__).resolve().parts[-levels_up]
+    cmd = sys.argv[1:] if len(sys.argv) > 1 else [str(package)]
 
     print(f"Running smoke tests with: {' '.join(cmd)}")
     try:
@@ -41,7 +44,10 @@ def main() -> None:
     except (subprocess.CalledProcessError, AssertionError) as e:
         print("\nSmoke test failed!", file=sys.stderr)
         if isinstance(e, subprocess.CalledProcessError):
-            print(f"Command '{' '.join(e.cmd)}' failed with exit code {e.returncode}.", file=sys.stderr)
+            print(
+                f"Command '{' '.join(e.cmd)}' failed with exit code {e.returncode}.",
+                file=sys.stderr,
+            )
             if e.stderr:
                 print(f"Stderr:\n{e.stderr.strip()}", file=sys.stderr)
         else:
