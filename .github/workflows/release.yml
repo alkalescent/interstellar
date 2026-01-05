@@ -336,3 +336,22 @@ jobs:
         user_email: 'github-actions[bot]@users.noreply.github.com'
         user_name: 'github-actions[bot]'
         commit_message: 'Update ${{ github.event.repository.name }} to ${{ needs.version-and-tag.outputs.tag_name }}'
+
+  smoke-test-homebrew:
+    name: Smoke Test Homebrew
+    needs: [version-and-tag, update-homebrew-tap]
+    runs-on: macos-latest
+    
+    steps:
+    - name: Tap and install formula
+      run: |
+        brew tap ${{ github.repository_owner }}/tap
+        brew install ${{ github.event.repository.name }}
+    
+    - name: Run formula test
+      run: brew test ${{ github.event.repository.name }}
+    
+    - name: Verify CLI works
+      run: |
+        ${{ github.event.repository.name }} version
+        ${{ github.event.repository.name }} --help

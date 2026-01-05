@@ -211,3 +211,63 @@ jobs:
     
     - name: Run smoke tests
       run: python tests/smoke.py ${{ github.event.repository.name }}
+
+  test-homebrew-formula:
+    name: Test Homebrew Formula
+    needs: test
+    runs-on: macos-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Generate formula for HEAD
+      run: |
+        NAME="${{ github.event.repository.name }}"
+        REPO="${{ github.repository }}"
+        
+        # Get description from pyproject.toml
+        DESCRIPTION=$(grep '^description' pyproject.toml | sed 's/description = "\(.*\)"/\1/')
+        
+        # Convert name to Ruby class name (capitalize, remove hyphens)
+        CLASS_NAME=$(echo "$NAME" | sed 's/-/ /g' | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) tolower(substr($i,2))}1' | tr -d ' ')
+        
+        # Generate formula using HEAD (no url/sha256 needed for --HEAD install)
+        cat > "${NAME}.rb" << EOF
+        class ${CLASS_NAME} < Formula
+          include Language::Python::Virtualenv
+        
+          desc "${DESCRIPTION}"
+          homepage "https://github.com/${REPO}"
+          head "https://github.com/${REPO}.git", branch: "${{ github.head_ref }}"
+          license "MIT"
+        
+          depends_on "python@3.13"
+        
+          def install
+            virtualenv_install_with_resources
+          end
+        
+          test do
+            assert_match(/\d+\.\d+\.\d+/, shell_output("#{bin}/${NAME} version"))
+            help_output = shell_output("#{bin}/${NAME} --help")
+            assert_match "deconstruct", help_output
+            assert_match "reconstruct", help_output
+          end
+        end
+        EOF
+        
+        echo "Generated formula:"
+        cat "${NAME}.rb"
+    
+    - name: Install formula from HEAD
+      run: |
+        brew install --HEAD --formula ./${{ github.event.repository.name }}.rb
+    
+    - name: Run formula test
+      run: |
+        brew test ${{ github.event.repository.name }}
+    
+    - name: Verify CLI works
+      run: |
+        ${{ github.event.repository.name }} version
+        ${{ github.event.repository.name }} --help
