@@ -15,7 +15,7 @@ A command-line tool for managing cryptocurrency mnemonics using BIP39 and SLIP39
 - **Share Reconstruction**: Reconstruct mnemonics from SLIP39 shares with threshold requirements
 - **Digit Mode**: Convert mnemonics to/from numeric format for easier backup
 
-## 💖 Support the Project
+## 💖 Support
 
 Love this tool? Your support means the world! ❤️
 

@@ -320,7 +320,7 @@ jobs:
             -e "s|{{URL}}|${TARBALL_URL}|g" \
             -e "s|{{SHA256}}|${SHA256}|g" \
             -e "s|{{REPOSITORY}}|https://github.com/${REPO}|g" \
-            scripts/formula.rb.template > "${NAME}.rb"
+            .github/templates/formula.rb.template > "${NAME}.rb"
         
         echo "Generated formula:"
         cat "${NAME}.rb"
