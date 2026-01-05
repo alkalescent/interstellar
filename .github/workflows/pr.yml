@@ -231,30 +231,16 @@ jobs:
         # Convert name to Ruby class name (capitalize, remove hyphens)
         CLASS_NAME=$(echo "$NAME" | sed 's/-/ /g' | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) tolower(substr($i,2))}1' | tr -d ' ')
         
-        # Generate formula using HEAD (no url/sha256 needed for --HEAD install)
-        cat > "${NAME}.rb" << EOF
-        class ${CLASS_NAME} < Formula
-          include Language::Python::Virtualenv
+        # Build source line for HEAD install (points to PR branch)
+        SOURCE_LINE="head \"https://github.com/${REPO}.git\", branch: \"${{ github.head_ref }}\""
         
-          desc "${DESCRIPTION}"
-          homepage "https://github.com/${REPO}"
-          head "https://github.com/${REPO}.git", branch: "${{ github.head_ref }}"
-          license "MIT"
-        
-          depends_on "python@3.13"
-        
-          def install
-            virtualenv_install_with_resources
-          end
-        
-          test do
-            assert_match(/\d+\.\d+\.\d+/, shell_output("#{bin}/${NAME} version"))
-            help_output = shell_output("#{bin}/${NAME} --help")
-            assert_match "deconstruct", help_output
-            assert_match "reconstruct", help_output
-          end
-        end
-        EOF
+        # Generate formula from template
+        sed -e "s|{{NAME}}|${NAME}|g" \
+            -e "s|{{CLASS_NAME}}|${CLASS_NAME}|g" \
+            -e "s|{{DESCRIPTION}}|${DESCRIPTION}|g" \
+            -e "s|{{HOMEPAGE}}|https://github.com/${REPO}|g" \
+            -e "s|{{SOURCE_LINE}}|${SOURCE_LINE}|g" \
+            .github/templates/formula.rb.template > "${NAME}.rb"
         
         echo "Generated formula:"
         cat "${NAME}.rb"

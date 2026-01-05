@@ -298,7 +298,6 @@ jobs:
     - name: Generate formula from template
       run: |
         NAME="${{ github.event.repository.name }}"
-        VERSION="${{ needs.version-and-tag.outputs.pypi_version }}"
         TAG="${{ needs.version-and-tag.outputs.tag_name }}"
         REPO="${{ github.repository }}"
         
@@ -312,14 +311,15 @@ jobs:
         # Convert name to Ruby class name (capitalize, remove hyphens)
         CLASS_NAME=$(echo "$NAME" | sed 's/-/ /g' | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) tolower(substr($i,2))}1' | tr -d ' ')
         
+        # Build source lines for release (url + sha256 + head)
+        SOURCE_LINE="url \"${TARBALL_URL}\"\n  sha256 \"${SHA256}\"\n  head \"https://github.com/${REPO}.git\", branch: \"master\""
+        
         # Generate formula from template
         sed -e "s|{{NAME}}|${NAME}|g" \
             -e "s|{{CLASS_NAME}}|${CLASS_NAME}|g" \
             -e "s|{{DESCRIPTION}}|${DESCRIPTION}|g" \
             -e "s|{{HOMEPAGE}}|https://github.com/${REPO}|g" \
-            -e "s|{{URL}}|${TARBALL_URL}|g" \
-            -e "s|{{SHA256}}|${SHA256}|g" \
-            -e "s|{{REPOSITORY}}|https://github.com/${REPO}|g" \
+            -e "s|{{SOURCE_LINE}}|${SOURCE_LINE}|g" \
             .github/templates/formula.rb.template > "${NAME}.rb"
         
         echo "Generated formula:"
