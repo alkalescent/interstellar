@@ -14,8 +14,8 @@ jobs:
     name: Test
     uses: ./.github/workflows/test.yml
 
-  version-and-tag:
-    name: Bump Version and Create Tag
+  version:
+    name: Version
     needs: test  # Only release after tests pass
     runs-on: ubuntu-latest
     outputs:
@@ -55,9 +55,9 @@ jobs:
     # Note: Version is injected locally for this job only.
     # Not committed to repo - downstream jobs inject version from tag.
 
-  publish-pypi:
-    name: Publish to PyPI
-    needs: version-and-tag
+  publish:
+    name: Publish PyPI
+    needs: version
     runs-on: ubuntu-latest
     environment:
       name: pypi
@@ -82,7 +82,7 @@ jobs:
     
     - name: Inject version from tag
       run: |
-        PYPI_VERSION="${{ needs.version-and-tag.outputs.new_version }}"
+        PYPI_VERSION="${{ needs.version.outputs.new_version }}"
         PYPI_VERSION="${PYPI_VERSION#v}"  # Strip 'v' prefix
         sed -i "s/^version = .*/version = \"$PYPI_VERSION\"/" pyproject.toml
         echo "PyPI version: $PYPI_VERSION"
@@ -100,7 +100,7 @@ jobs:
 
   build-onefile:
     name: Build Onefile (${{ matrix.os }})
-    needs: version-and-tag
+    needs: version
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -150,7 +150,7 @@ jobs:
 
   build-standalone:
     name: Build Standalone (${{ matrix.os }})
-    needs: version-and-tag
+    needs: version
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -199,9 +199,9 @@ jobs:
         path: ${{ github.event.repository.name }}-${{ matrix.platform }}.tar.gz
         if-no-files-found: error
 
-  create-release:
-    name: Create GitHub Release
-    needs: [version-and-tag, build-onefile, build-standalone]
+  release:
+    name: Release
+    needs: [version, build-onefile, build-standalone]
     runs-on: ubuntu-latest
     
     steps:
@@ -223,15 +223,15 @@ jobs:
     - name: Create Release
       uses: softprops/action-gh-release@v2
       with:
-        tag_name: ${{ needs.version-and-tag.outputs.tag_name }}
+        tag_name: ${{ needs.version.outputs.tag_name }}
         files: release-assets/*
         generate_release_notes: true
         draft: false
-        prerelease: ${{ contains(needs.version-and-tag.outputs.new_version, 'alpha') || contains(needs.version-and-tag.outputs.new_version, 'beta') || contains(needs.version-and-tag.outputs.new_version, 'rc') }}
+        prerelease: ${{ contains(needs.version.outputs.new_version, 'alpha') || contains(needs.version.outputs.new_version, 'beta') || contains(needs.version.outputs.new_version, 'rc') }}
 
-  smoke-test-pypi:
-    name: Smoke Test PyPI
-    needs: [version-and-tag, publish-pypi]
+  smoke-pypi:
+    name: Smoke PyPI
+    needs: [version, publish]
     runs-on: ubuntu-latest
     
     steps:
@@ -245,13 +245,13 @@ jobs:
       run: sleep 60
     
     - name: Install from PyPI
-      run: pip install ${{ github.event.repository.name }}==${{ needs.version-and-tag.outputs.pypi_version }}
+      run: pip install ${{ github.event.repository.name }}==${{ needs.version.outputs.pypi_version }}
     
     - name: Run smoke tests
       run: python tests/smoke.py ${{ github.event.repository.name }}
 
-  smoke-test-binaries:
-    name: Smoke Test Binary (${{ matrix.os }})
+  smoke-binary:
+    name: Smoke Binary (${{ matrix.os }})
     needs: [build-onefile, build-standalone]
     runs-on: ${{ matrix.os }}
     strategy:
@@ -287,9 +287,9 @@ jobs:
     - name: Run smoke tests
       run: python tests/smoke.py ./${{ github.event.repository.name }}${{ matrix.binary_ext }}
 
-  update-homebrew-tap:
-    name: Update Homebrew Formula
-    needs: [version-and-tag, create-release]
+  homebrew:
+    name: Update Homebrew
+    needs: [version, release]
     runs-on: ubuntu-latest
     
     steps:
@@ -298,7 +298,7 @@ jobs:
     - name: Generate formula from template
       run: |
         NAME="${{ github.event.repository.name }}"
-        TAG="${{ needs.version-and-tag.outputs.tag_name }}"
+        TAG="${{ needs.version.outputs.tag_name }}"
         REPO="${{ github.repository }}"
         
         # Get description from pyproject.toml
@@ -335,11 +335,11 @@ jobs:
         destination_folder: 'Formula'
         user_email: 'github-actions[bot]@users.noreply.github.com'
         user_name: 'github-actions[bot]'
-        commit_message: 'Update ${{ github.event.repository.name }} to ${{ needs.version-and-tag.outputs.tag_name }}'
+        commit_message: 'Update ${{ github.event.repository.name }} to ${{ needs.version.outputs.tag_name }}'
 
-  smoke-test-homebrew:
-    name: Smoke Test Homebrew
-    needs: [version-and-tag, update-homebrew-tap]
+  smoke-homebrew:
+    name: Smoke Homebrew
+    needs: [version, homebrew]
     runs-on: macos-latest
     
     steps:

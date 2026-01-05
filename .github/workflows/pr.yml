@@ -15,8 +15,8 @@ jobs:
     name: Test
     uses: ./.github/workflows/test.yml
 
-  generate-qr:
-    name: Generate QR Codes
+  qr:
+    name: QR Codes
     needs: test
     runs-on: ubuntu-latest
     # Skip if triggered by QR code update commit to prevent infinite loop
@@ -51,8 +51,8 @@ jobs:
           git push
         fi
 
-  version-preview:
-    name: Version Preview & TestPyPI
+  version:
+    name: Version Preview
     needs: test  # Only run after tests pass
     runs-on: ubuntu-latest
     outputs:
@@ -185,9 +185,9 @@ jobs:
             console.log('Created new version comment');
           }
 
-  smoke-test-package:
-    name: Smoke Test Package
-    needs: version-preview
+  smoke-pypi:
+    name: Smoke PyPI
+    needs: version
     runs-on: ubuntu-latest
     # Only run if TestPyPI publish succeeded
     if: success()
@@ -206,14 +206,14 @@ jobs:
       run: |
         pip install --index-url https://test.pypi.org/simple/ \
           --extra-index-url https://pypi.org/simple/ \
-          ${{ github.event.repository.name }}==${{ needs.version-preview.outputs.pypi_version }}
+          ${{ github.event.repository.name }}==${{ needs.version.outputs.pypi_version }}
       continue-on-error: true  # TestPyPI may not have indexed yet
     
     - name: Run smoke tests
       run: python tests/smoke.py ${{ github.event.repository.name }}
 
-  test-homebrew-formula:
-    name: Test Homebrew Formula
+  smoke-homebrew:
+    name: Smoke Homebrew
     needs: test
     runs-on: macos-latest
     
