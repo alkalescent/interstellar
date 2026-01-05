@@ -286,3 +286,53 @@ jobs:
     
     - name: Run smoke tests
       run: python tests/smoke.py ./${{ github.event.repository.name }}${{ matrix.binary_ext }}
+
+  update-homebrew-tap:
+    name: Update Homebrew Formula
+    needs: [version-and-tag, create-release]
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Generate formula from template
+      run: |
+        NAME="${{ github.event.repository.name }}"
+        VERSION="${{ needs.version-and-tag.outputs.pypi_version }}"
+        TAG="${{ needs.version-and-tag.outputs.tag_name }}"
+        REPO="${{ github.repository }}"
+        
+        # Get description from pyproject.toml
+        DESCRIPTION=$(grep '^description' pyproject.toml | sed 's/description = "\(.*\)"/\1/')
+        
+        # Calculate SHA256 of release tarball
+        TARBALL_URL="https://github.com/${REPO}/archive/refs/tags/${TAG}.tar.gz"
+        SHA256=$(curl -sL "$TARBALL_URL" | shasum -a 256 | cut -d' ' -f1)
+        
+        # Convert name to Ruby class name (capitalize, remove hyphens)
+        CLASS_NAME=$(echo "$NAME" | sed 's/-/ /g' | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) tolower(substr($i,2))}1' | tr -d ' ')
+        
+        # Generate formula from template
+        sed -e "s|{{NAME}}|${NAME}|g" \
+            -e "s|{{CLASS_NAME}}|${CLASS_NAME}|g" \
+            -e "s|{{DESCRIPTION}}|${DESCRIPTION}|g" \
+            -e "s|{{HOMEPAGE}}|https://github.com/${REPO}|g" \
+            -e "s|{{URL}}|${TARBALL_URL}|g" \
+            -e "s|{{SHA256}}|${SHA256}|g" \
+            -e "s|{{REPOSITORY}}|https://github.com/${REPO}|g" \
+            scripts/formula.rb.template > "${NAME}.rb"
+        
+        echo "Generated formula:"
+        cat "${NAME}.rb"
+    
+    - name: Push to homebrew-tap
+      uses: dmnemec/copy_file_to_another_repo_action@main
+      env:
+        API_TOKEN_GITHUB: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+      with:
+        source_file: '${{ github.event.repository.name }}.rb'
+        destination_repo: '${{ github.repository_owner }}/homebrew-tap'
+        destination_folder: 'Formula'
+        user_email: 'github-actions[bot]@users.noreply.github.com'
+        user_name: 'github-actions[bot]'
+        commit_message: 'Update ${{ github.event.repository.name }} to ${{ needs.version-and-tag.outputs.tag_name }}'

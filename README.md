@@ -39,29 +39,48 @@ Love this tool? Your support means the world! ❤️
 
 ## 📦 Installation
 
-### From PyPI (Recommended)
+### Homebrew (macOS/Linux)
+
+```bash
+brew tap alkalescent/tap
+brew install interstellar
+```
+
+### PyPI (Recommended)
 
 ```bash
 pip install interstellar
 ```
 
+After installation, use either the command directly or as a Python module:
+
+```bash
+# Direct command
+interstellar --help
+
+# As Python module
+python -m interstellar --help
+```
+
 ### From Source
 
-Clone the repository and install dependencies:
+Clone the repository and install in development mode:
+
 ```bash
 git clone https://github.com/alkalescent/interstellar.git
 cd interstellar
-uv sync
+pip install -e .
 ```
 
-### Build Binary
+### Build Standalone Binary
 
 From the repository root:
+
 ```bash
-./build.sh
+./scripts/build.sh
 ```
 
-This creates a standalone executable at `cli.dist/interstellar`.
+This creates a standalone executable using Nuitka.
 
 ## 🚀 Usage
 
