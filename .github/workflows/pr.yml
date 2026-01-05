@@ -220,10 +220,15 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Generate formula for HEAD
+    - name: Create local tap and generate formula
       run: |
         NAME="${{ github.event.repository.name }}"
         REPO="${{ github.repository }}"
+        
+        # Create a local tap
+        brew tap-new local/tap
+        TAP_PATH="$(brew --repository)/Library/Taps/local/homebrew-tap/Formula"
+        mkdir -p "$TAP_PATH"
         
         # Get description from pyproject.toml
         DESCRIPTION=$(grep '^description' pyproject.toml | sed 's/description = "\(.*\)"/\1/')
@@ -234,26 +239,25 @@ jobs:
         # Build source line for HEAD install (points to PR branch)
         SOURCE_LINE="head \"https://github.com/${REPO}.git\", branch: \"${{ github.head_ref }}\""
         
-        # Generate formula from template
+        # Generate formula from template into the tap
         sed -e "s|{{NAME}}|${NAME}|g" \
             -e "s|{{CLASS_NAME}}|${CLASS_NAME}|g" \
             -e "s|{{DESCRIPTION}}|${DESCRIPTION}|g" \
             -e "s|{{HOMEPAGE}}|https://github.com/${REPO}|g" \
             -e "s|{{SOURCE_LINE}}|${SOURCE_LINE}|g" \
-            .github/templates/formula.rb.template > "${NAME}.rb"
+            .github/templates/formula.rb.template > "$TAP_PATH/${NAME}.rb"
         
-        echo "Generated formula:"
-        cat "${NAME}.rb"
+        echo "Generated formula at $TAP_PATH/${NAME}.rb:"
+        cat "$TAP_PATH/${NAME}.rb"
     
     - name: Install formula from HEAD
-      run: |
-        brew install --HEAD --formula ./${{ github.event.repository.name }}.rb
+      run: brew install --HEAD local/tap/${{ github.event.repository.name }}
     
     - name: Run formula test
-      run: |
-        brew test ${{ github.event.repository.name }}
+      run: brew test local/tap/${{ github.event.repository.name }}
     
     - name: Verify CLI works
       run: |
         ${{ github.event.repository.name }} version
         ${{ github.event.repository.name }} --help
+
