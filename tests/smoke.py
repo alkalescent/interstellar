@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Smoke tests for verifying installation and CLI functionality."""
 
+import importlib
 import subprocess
 import sys
+import tomllib
 from pathlib import Path
 
 
@@ -13,9 +15,17 @@ def run(cmd: list[str]) -> subprocess.CompletedProcess:
 
 
 def get_package_name() -> str:
-    """Get package name from directory structure."""
-    levels_up = 3
-    return Path(__file__).resolve().parts[-levels_up]
+    """Get package name from pyproject.toml."""
+    # Assumes Python 3.11+ for tomllib
+    current_path = Path(__file__).resolve().parent
+    while current_path != current_path.parent:
+        pyproject_path = current_path / "pyproject.toml"
+        if pyproject_path.exists():
+            with open(pyproject_path, "rb") as f:
+                data = tomllib.load(f)
+            return data["project"]["name"]
+        current_path = current_path.parent
+    raise RuntimeError("Could not find pyproject.toml in parent directories.")
 
 
 def test_version(cmd: list[str]) -> None:
@@ -47,21 +57,25 @@ def test_module_invocation() -> None:
 def test_imports() -> None:
     """Test package imports work correctly."""
     package = get_package_name()
-    # Use exec to dynamically import based on package name
-    exec_globals: dict = {}
 
     # Test main package imports
-    exec(f"from {package} import BIP39, SLIP39, __version__", exec_globals)
-    assert exec_globals["__version__"], "version is empty"
+    pkg = importlib.import_module(package)
+    assert hasattr(pkg, "BIP39")
+    assert hasattr(pkg, "SLIP39")
+    assert hasattr(pkg, "__version__")
+    assert pkg.__version__, "version is empty"
 
     # Test submodule imports
-    exec(f"from {package}.tools import BIP39 as BIP39Tool", exec_globals)
-    exec(
-        f"from {package}.cli import app, deconstruct, reconstruct, version",
-        exec_globals,
-    )
+    tools_module = importlib.import_module(f"{package}.tools")
+    assert hasattr(tools_module, "BIP39")
 
-    print(f"✓ imports: BIP39, SLIP39, __version__={exec_globals['__version__']}")
+    cli_module = importlib.import_module(f"{package}.cli")
+    assert hasattr(cli_module, "app")
+    assert hasattr(cli_module, "deconstruct")
+    assert hasattr(cli_module, "reconstruct")
+    assert hasattr(cli_module, "version")
+
+    print(f"✓ imports: BIP39, SLIP39, __version__={pkg.__version__}")
 
 
 def main() -> None:

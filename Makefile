@@ -26,7 +26,7 @@ test:
 	uv run python -m pytest
 
 smoke:
-	uv run python tests/smoke.py ./$(NAME)
+	uv run python tests/smoke.py $(NAME)
 
 cov:
 	uv run python -m pytest --cov --cov-report=term-missing --cov-fail-under=90
