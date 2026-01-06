@@ -200,8 +200,10 @@ jobs:
     
     - name: Install from TestPyPI
       run: |
+        pip cache purge
         pip install --index-url https://test.pypi.org/simple/ \
           --extra-index-url https://pypi.org/simple/ \
+          --no-cache-dir \
           ${{ github.event.repository.name }}==${{ needs.version.outputs.pypi_version }}
     
     - name: Run smoke tests
