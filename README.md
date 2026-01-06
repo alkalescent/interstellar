@@ -187,7 +187,7 @@ interstellar reconstruct \
 interstellar reconstruct --filename shares.txt --standard SLIP39
 ```
 
-## 📁 File Format
+## 📁 Files
 
 ### Input Files
 
@@ -244,7 +244,7 @@ Run with coverage reporting (requires 90% coverage):
 uv run python -m pytest --cov --cov-report=term-missing --cov-fail-under=90
 ```
 
-## 🔐 Security Notes
+## 🔐 Security
 
 ⚠️ **Important Security Considerations:**
 
