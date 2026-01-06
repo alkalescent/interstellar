@@ -198,7 +198,7 @@ jobs:
         python-version: '3.13'
     
     - name: Wait for TestPyPI indexing
-      run: sleep 30
+      run: sleep 60
     
     - name: Install from TestPyPI
       run: |
