@@ -47,7 +47,9 @@ app = typer.Typer()
 cli = CLI()
 
 
-@app.command(help="Split a BIP39 mnemonic into parts or SLIP39 shares for secure backup.")
+@app.command(
+    help="Split a BIP39 mnemonic into parts or SLIP39 shares for secure backup."
+)
 def deconstruct(
     mnemonic: Annotated[str, typer.Option(help="BIP39 mnemonic to deconstruct")] = "",
     filename: Annotated[
