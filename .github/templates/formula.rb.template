@@ -16,9 +16,14 @@ class {{CLASS_NAME}} < Formula
   depends_on "python@3.13"
 
   def install
-    # Create virtualenv and install package with all dependencies via pip
+    # Create virtualenv with Python 3.13
     venv = virtualenv_create(libexec, "python3.13")
-    venv.pip_install_and_link buildpath
+    
+    # Install the package and all its dependencies
+    system libexec/"bin/pip", "install", "."
+    
+    # Link the entry point script to bin
+    bin.install_symlink Dir[libexec/"bin/{{NAME}}"]
   end
 
   test do
