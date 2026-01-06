@@ -14,7 +14,8 @@ def run(cmd: list[str]) -> subprocess.CompletedProcess:
 
 def get_package_name() -> str:
     """Get package name from directory structure."""
-    return Path(__file__).resolve().parts[-3]
+    levels_up = 3
+    return Path(__file__).resolve().parts[-levels_up]
 
 
 def test_version(cmd: list[str]) -> None:
