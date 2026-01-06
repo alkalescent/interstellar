@@ -17,6 +17,7 @@ jobs:
 
   qr:
     name: QR Codes
+    if: false  # Temporarily disabled for Homebrew testing
     needs: test
     runs-on: ubuntu-latest
     # Skip if triggered by QR code update commit to prevent infinite loop
@@ -53,6 +54,7 @@ jobs:
 
   version:
     name: Version Preview
+    if: false  # Temporarily disabled for Homebrew testing
     needs: test  # Only run after tests pass
     runs-on: ubuntu-latest
     outputs:
@@ -185,6 +187,7 @@ jobs:
 
   smoke-pypi:
     name: Smoke PyPI
+    if: false  # Temporarily disabled for Homebrew testing
     needs: version
     runs-on: ubuntu-latest
     

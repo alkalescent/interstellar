@@ -19,9 +19,13 @@ class {{CLASS_NAME}} < Formula
     # Create virtualenv with Python 3.13
     venv = virtualenv_create(libexec, "python3.13")
     
-    # Install package with dependencies using pip directly
-    # Using --no-cache-dir to avoid cache issues, -v for verbose output
-    system libexec/"bin/pip", "install", "--no-cache-dir", "-v", buildpath
+    # First install build dependencies  
+    system libexec/"bin/pip", "install", "--no-cache-dir", "setuptools", "wheel"
+    
+    # Build a wheel then install it (more reliable than direct install)
+    system libexec/"bin/pip", "install", "--no-cache-dir", "build"
+    system libexec/"bin/python", "-m", "build", "--wheel", "--outdir=dist", buildpath.to_s
+    system libexec/"bin/pip", "install", "--no-cache-dir", Dir["dist/*.whl"].first
     
     # Link the entry point script to Homebrew bin
     bin.install_symlink Dir[libexec/"bin/{{NAME}}"]
