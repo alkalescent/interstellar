@@ -115,10 +115,8 @@ jobs:
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         repository-url: https://test.pypi.org/legacy/
-        skip-existing: true
         # Uses OIDC trusted publishing - configure at:
         # https://test.pypi.org/manage/account/publishing/
-      continue-on-error: true  # TestPyPI publishing is best-effort for PR previews
     
     - name: Comment version info on PR
       uses: actions/github-script@v7
