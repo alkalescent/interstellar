@@ -142,7 +142,9 @@ jobs:
       shell: bash
     
     - name: Rename binary with platform suffix
-      run: mv ${{ github.event.repository.name }}${{ matrix.binary_name }} ${{ github.event.repository.name }}-${{ matrix.artifact_suffix }}
+      run: |
+        mv ${{ github.event.repository.name }}${{ matrix.binary_name }} ${{ github.event.repository.name }}-${{ matrix.artifact_suffix }}
+        chmod +x ${{ github.event.repository.name }}-${{ matrix.artifact_suffix }} || true
       shell: bash
     
     - name: Upload artifact
