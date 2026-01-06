@@ -141,11 +141,15 @@ jobs:
         ./scripts/build.sh
       shell: bash
     
+    - name: Rename binary with platform suffix
+      run: mv ${{ github.event.repository.name }}${{ matrix.binary_name }} ${{ github.event.repository.name }}-${{ matrix.artifact_suffix }}
+      shell: bash
+    
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: ${{ github.event.repository.name }}-${{ matrix.artifact_suffix }}
-        path: ${{ github.event.repository.name }}${{ matrix.binary_name }}
+        path: ${{ github.event.repository.name }}-${{ matrix.artifact_suffix }}
         if-no-files-found: error
 
   build-standalone:
@@ -260,13 +264,10 @@ jobs:
         include:
           - os: ubuntu-latest
             artifact_suffix: linux-onefile
-            binary_ext: ''
           - os: macos-latest
             artifact_suffix: macos-onefile
-            binary_ext: ''
           - os: windows-latest
             artifact_suffix: windows-onefile.exe
-            binary_ext: .exe
     
     steps:
     - uses: actions/checkout@v4
@@ -281,11 +282,11 @@ jobs:
         name: ${{ github.event.repository.name }}-${{ matrix.artifact_suffix }}
     
     - name: Make executable
-      run: chmod +x ./${{ github.event.repository.name }}${{ matrix.binary_ext }} || true
+      run: chmod +x ./${{ github.event.repository.name }}-${{ matrix.artifact_suffix }} || true
       shell: bash
     
     - name: Run smoke tests
-      run: python tests/smoke.py ./${{ github.event.repository.name }}${{ matrix.binary_ext }}
+      run: python tests/smoke.py ./${{ github.event.repository.name }}-${{ matrix.artifact_suffix }}
 
   homebrew:
     name: Update Homebrew
