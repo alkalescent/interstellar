@@ -93,6 +93,21 @@ tar -xzf interstellar-linux-fast.tar.gz
 ./cli.dist/interstellar --help
 ```
 
+### Build from Source
+
+Build your own binaries using [Nuitka](https://nuitka.net/):
+
+```bash
+git clone https://github.com/alkalescent/interstellar.git
+cd interstellar
+
+# Build portable (single file, slower startup)
+MODE=onefile ./scripts/build.sh
+
+# Build fast (directory, faster startup)
+MODE=standalone ./scripts/build.sh
+```
+
 ## 🚀 Usage
 
 The CLI provides two main commands: `deconstruct` and `reconstruct`.
