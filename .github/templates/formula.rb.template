@@ -19,10 +19,10 @@ class {{CLASS_NAME}} < Formula
     # Create virtualenv with Python 3.13
     venv = virtualenv_create(libexec, "python3.13")
     
-    # Install the package and all its dependencies
-    system libexec/"bin/pip", "install", "."
+    # Install the package and all its dependencies using buildpath
+    venv.pip_install buildpath
     
-    # Link the entry point script to bin
+    # Link all executables from the virtualenv bin to Homebrew bin
     bin.install_symlink Dir[libexec/"bin/{{NAME}}"]
   end
 
