@@ -19,4 +19,4 @@ uv run python -m nuitka \
   --include-data-files="$SITE_PACKAGES/shamir_mnemonic/wordlist.txt=./shamir_mnemonic/wordlist.txt" \
   --remove-output \
   --assume-yes-for-downloads \
-  cli.py
+  src/${NAME}/cli.py

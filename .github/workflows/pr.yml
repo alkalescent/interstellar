@@ -15,8 +15,8 @@ jobs:
     name: Test
     uses: ./.github/workflows/test.yml
 
-  generate-qr:
-    name: Generate QR Codes
+  qr:
+    name: QR Codes
     needs: test
     runs-on: ubuntu-latest
     # Skip if triggered by QR code update commit to prevent infinite loop
@@ -39,7 +39,7 @@ jobs:
       run: uv sync
     
     - name: Generate QR codes
-      run: uv run python scripts/generate_qr.py
+      run: uv run python scripts/qr.py
     
     - name: Commit if changed
       run: |
@@ -51,10 +51,12 @@ jobs:
           git push
         fi
 
-  version-preview:
-    name: Version Preview & TestPyPI
+  version:
+    name: Version Preview
     needs: test  # Only run after tests pass
     runs-on: ubuntu-latest
+    outputs:
+      pypi_version: ${{ steps.set-version.outputs.pypi_version }}
     environment:
       name: testpypi
       url: https://test.pypi.org/p/${{ github.event.repository.name }}
@@ -86,6 +88,7 @@ jobs:
       uses: astral-sh/setup-uv@v4
     
     - name: Update version in pyproject.toml
+      id: set-version
       run: |
         # Get base version from tag action (e.g., v1.2.0-rc.0)
         BASE_TAG="${NEW_TAG}"
@@ -98,6 +101,7 @@ jobs:
         sed -i "s/^version = .*/version = \"$PYPI_VERSION\"/" pyproject.toml
         echo "Tag version: $NEW_TAG"
         echo "PyPI version: $PYPI_VERSION"
+        echo "pypi_version=$PYPI_VERSION" >> $GITHUB_OUTPUT
         grep "^version" pyproject.toml
       env:
         NEW_TAG: ${{ steps.version.outputs.new_tag }}
@@ -111,10 +115,8 @@ jobs:
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         repository-url: https://test.pypi.org/legacy/
-        skip-existing: true
         # Uses OIDC trusted publishing - configure at:
         # https://test.pypi.org/manage/account/publishing/
-      continue-on-error: true  # TestPyPI publishing is best-effort for PR previews
     
     - name: Comment version info on PR
       uses: actions/github-script@v7
@@ -180,3 +182,77 @@ jobs:
             });
             console.log('Created new version comment');
           }
+
+  smoke-pypi:
+    name: Smoke PyPI
+    needs: version
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+    
+    - name: Wait for TestPyPI indexing
+      run: sleep 150
+    
+    - name: Install from TestPyPI
+      run: |
+        pip install --index-url https://test.pypi.org/simple/ \
+          --extra-index-url https://pypi.org/simple/ \
+          ${{ github.event.repository.name }}==${{ needs.version.outputs.pypi_version }}
+    
+    - name: Run smoke tests
+      run: python tests/smoke.py ${{ github.event.repository.name }}
+
+  smoke-homebrew:
+    name: Smoke Homebrew
+    needs: test
+    runs-on: macos-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Create local tap and generate formula
+      run: |
+        NAME="${{ github.event.repository.name }}"
+        REPO="${{ github.repository }}"
+        
+        # Create a local tap
+        brew tap-new local/tap
+        TAP_PATH="$(brew --repository)/Library/Taps/local/homebrew-tap/Formula"
+        mkdir -p "$TAP_PATH"
+        
+        # Get description from pyproject.toml
+        DESCRIPTION=$(grep '^description' pyproject.toml | sed 's/description = "\(.*\)"/\1/')
+        
+        # Convert name to Ruby class name (capitalize, remove hyphens)
+        CLASS_NAME=$(echo "$NAME" | sed 's/-/ /g' | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) tolower(substr($i,2))}1' | tr -d ' ')
+        
+        # Build source line for HEAD install (points to PR branch)
+        SOURCE_LINE="head \"https://github.com/${REPO}.git\", branch: \"${{ github.head_ref }}\""
+        
+        # Generate formula from template into the tap
+        sed -e "s|{{NAME}}|${NAME}|g" \
+            -e "s|{{CLASS_NAME}}|${CLASS_NAME}|g" \
+            -e "s|{{DESCRIPTION}}|${DESCRIPTION}|g" \
+            -e "s|{{HOMEPAGE}}|https://github.com/${REPO}|g" \
+            -e "s|{{SOURCE_LINE}}|${SOURCE_LINE}|g" \
+            .github/templates/formula.rb.template > "$TAP_PATH/${NAME}.rb"
+        
+        echo "Generated formula at $TAP_PATH/${NAME}.rb:"
+        cat "$TAP_PATH/${NAME}.rb"
+    
+    - name: Install formula from HEAD
+      run: brew install --HEAD local/tap/${{ github.event.repository.name }}
+    
+    - name: Run formula test
+      run: brew test local/tap/${{ github.event.repository.name }}
+    
+    - name: Verify CLI works
+      run: |
+        ${{ github.event.repository.name }} version
+        ${{ github.event.repository.name }} --help
+

@@ -1,0 +1,40 @@
+# typed: false
+# frozen_string_literal: true
+
+# Homebrew formula for {{NAME}}
+# Auto-generated from .github/templates/formula.rb.template
+# Supports both release (url/sha256) and HEAD (head) modes
+
+class {{CLASS_NAME}} < Formula
+  include Language::Python::Virtualenv
+
+  desc "{{DESCRIPTION}}"
+  homepage "{{HOMEPAGE}}"
+  {{SOURCE_LINE}}
+  license "MIT"
+
+  depends_on "python@3.13"
+
+  def install
+    # Create venv with pip included (not --without-pip)
+    python3 = "python3.13"
+    system python3, "-m", "venv", libexec
+    
+    # Install the package and all dependencies
+    system libexec/"bin/pip", "install", "--upgrade", "pip"
+    system libexec/"bin/pip", "install", buildpath.to_s
+    
+    # Create wrapper scripts in bin that use the venv
+    bin.install_symlink Dir[libexec/"bin/{{NAME}}"]
+  end
+
+  test do
+    # Test version command
+    assert_match(/\d+\.\d+\.\d+/, shell_output("#{bin}/{{NAME}} version"))
+
+    # Test help command shows expected subcommands
+    help_output = shell_output("#{bin}/{{NAME}} --help")
+    assert_match "deconstruct", help_output
+    assert_match "reconstruct", help_output
+  end
+end

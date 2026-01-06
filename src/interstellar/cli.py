@@ -7,7 +7,7 @@ from typing import Annotated
 
 import typer
 
-from tools import BIP39, SLIP39
+from interstellar.tools import BIP39, SLIP39
 
 PACKAGE_NAME = Path(__file__).parent.name
 
@@ -47,7 +47,9 @@ app = typer.Typer()
 cli = CLI()
 
 
-@app.command()
+@app.command(
+    help="Split a BIP39 mnemonic into parts or SLIP39 shares for secure backup."
+)
 def deconstruct(
     mnemonic: Annotated[str, typer.Option(help="BIP39 mnemonic to deconstruct")] = "",
     filename: Annotated[
@@ -128,7 +130,7 @@ def deconstruct(
         raise typer.Exit(code=0)
 
 
-@app.command()
+@app.command(help="Reconstruct a BIP39 mnemonic from SLIP39 shares or BIP39 parts.")
 def reconstruct(
     shares: Annotated[
         str, typer.Option(help="SLIP39 shares to reconstruct", parser=cli.parse_2D_list)
@@ -186,9 +188,8 @@ def reconstruct(
     raise typer.Exit(code=0)
 
 
-@app.command()
+@app.command(help="Show the installed version.")
 def version():
-    """Show the installed version."""
     try:
         typer.echo(get_version(PACKAGE_NAME))
     except PackageNotFoundError:

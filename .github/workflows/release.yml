@@ -14,13 +14,14 @@ jobs:
     name: Test
     uses: ./.github/workflows/test.yml
 
-  version-and-tag:
-    name: Bump Version and Create Tag
+  version:
+    name: Version
     needs: test  # Only release after tests pass
     runs-on: ubuntu-latest
     outputs:
       new_version: ${{ steps.version.outputs.new_tag }}
       tag_name: ${{ steps.version.outputs.new_tag }}
+      pypi_version: ${{ steps.set-version.outputs.pypi_version }}
     
     steps:
     - uses: actions/checkout@v4
@@ -40,21 +41,23 @@ jobs:
         INITIAL_VERSION: 1.0.3
     
     - name: Update version in pyproject.toml
+      id: set-version
       run: |
         # Strip 'v' prefix for PyPI-compatible version
         PYPI_VERSION="${NEW_TAG#v}"
         sed -i "s/^version = .*/version = \"$PYPI_VERSION\"/" pyproject.toml
         echo "Tag version: $NEW_TAG"
         echo "PyPI version: $PYPI_VERSION"
+        echo "pypi_version=$PYPI_VERSION" >> $GITHUB_OUTPUT
         grep "^version" pyproject.toml
       env:
         NEW_TAG: ${{ steps.version.outputs.new_tag }}
     # Note: Version is injected locally for this job only.
     # Not committed to repo - downstream jobs inject version from tag.
 
-  publish-pypi:
-    name: Publish to PyPI
-    needs: version-and-tag
+  publish:
+    name: Publish PyPI
+    needs: version
     runs-on: ubuntu-latest
     environment:
       name: pypi
@@ -79,7 +82,7 @@ jobs:
     
     - name: Inject version from tag
       run: |
-        PYPI_VERSION="${{ needs.version-and-tag.outputs.new_version }}"
+        PYPI_VERSION="${{ needs.version.outputs.new_version }}"
         PYPI_VERSION="${PYPI_VERSION#v}"  # Strip 'v' prefix
         sed -i "s/^version = .*/version = \"$PYPI_VERSION\"/" pyproject.toml
         echo "PyPI version: $PYPI_VERSION"
@@ -97,7 +100,7 @@ jobs:
 
   build-onefile:
     name: Build Onefile (${{ matrix.os }})
-    needs: version-and-tag
+    needs: version
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -147,7 +150,7 @@ jobs:
 
   build-standalone:
     name: Build Standalone (${{ matrix.os }})
-    needs: version-and-tag
+    needs: version
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -186,19 +189,19 @@ jobs:
       shell: bash
     
     - name: Create archive
-      run: tar -czf "${{ github.event.repository.name }}-${{ matrix.platform }}-standalone.tar.gz" cli.dist/
+      run: tar -czf "${{ github.event.repository.name }}-${{ matrix.platform }}.tar.gz" cli.dist/
       shell: bash
     
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ github.event.repository.name }}-${{ matrix.platform }}-standalone
-        path: ${{ github.event.repository.name }}-${{ matrix.platform }}-standalone.tar.gz
+        name: ${{ github.event.repository.name }}-${{ matrix.platform }}
+        path: ${{ github.event.repository.name }}-${{ matrix.platform }}.tar.gz
         if-no-files-found: error
 
-  create-release:
-    name: Create GitHub Release
-    needs: [version-and-tag, build-onefile, build-standalone]
+  release:
+    name: Release
+    needs: [version, build-onefile, build-standalone]
     runs-on: ubuntu-latest
     
     steps:
@@ -220,8 +223,135 @@ jobs:
     - name: Create Release
       uses: softprops/action-gh-release@v2
       with:
-        tag_name: ${{ needs.version-and-tag.outputs.tag_name }}
+        tag_name: ${{ needs.version.outputs.tag_name }}
         files: release-assets/*
         generate_release_notes: true
         draft: false
-        prerelease: ${{ contains(needs.version-and-tag.outputs.new_version, 'alpha') || contains(needs.version-and-tag.outputs.new_version, 'beta') || contains(needs.version-and-tag.outputs.new_version, 'rc') }}
+        prerelease: ${{ contains(needs.version.outputs.new_version, 'alpha') || contains(needs.version.outputs.new_version, 'beta') || contains(needs.version.outputs.new_version, 'rc') }}
+
+  smoke-pypi:
+    name: Smoke PyPI
+    needs: [version, publish]
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+    
+    - name: Wait for PyPI indexing
+      run: sleep 150
+    
+    - name: Install from PyPI
+      run: pip install ${{ github.event.repository.name }}==${{ needs.version.outputs.pypi_version }}
+    
+    - name: Run smoke tests
+      run: python tests/smoke.py ${{ github.event.repository.name }}
+
+  smoke-binary:
+    name: Smoke Binary (${{ matrix.os }})
+    needs: [build-onefile, build-standalone]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            artifact_suffix: linux-onefile
+            binary_ext: ''
+          - os: macos-latest
+            artifact_suffix: macos-onefile
+            binary_ext: ''
+          - os: windows-latest
+            artifact_suffix: windows-onefile.exe
+            binary_ext: .exe
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+    
+    - name: Download binary
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ github.event.repository.name }}-${{ matrix.artifact_suffix }}
+    
+    - name: Make executable
+      run: chmod +x ./${{ github.event.repository.name }}${{ matrix.binary_ext }} || true
+      shell: bash
+    
+    - name: Run smoke tests
+      run: python tests/smoke.py ./${{ github.event.repository.name }}${{ matrix.binary_ext }}
+
+  homebrew:
+    name: Update Homebrew
+    needs: [version, release]
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Generate formula from template
+      run: |
+        NAME="${{ github.event.repository.name }}"
+        TAG="${{ needs.version.outputs.tag_name }}"
+        REPO="${{ github.repository }}"
+        
+        # Get description from pyproject.toml
+        DESCRIPTION=$(grep '^description' pyproject.toml | sed 's/description = "\(.*\)"/\1/')
+        
+        # Calculate SHA256 of release tarball
+        TARBALL_URL="https://github.com/${REPO}/archive/refs/tags/${TAG}.tar.gz"
+        SHA256=$(curl -sL "$TARBALL_URL" | shasum -a 256 | cut -d' ' -f1)
+        
+        # Convert name to Ruby class name (capitalize, remove hyphens)
+        CLASS_NAME=$(echo "$NAME" | sed 's/-/ /g' | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) tolower(substr($i,2))}1' | tr -d ' ')
+        
+        # Build source lines for release (url + sha256 + head)
+        SOURCE_LINE="url \"${TARBALL_URL}\"\n  sha256 \"${SHA256}\"\n  head \"https://github.com/${REPO}.git\", branch: \"master\""
+        
+        # Generate formula from template
+        sed -e "s|{{NAME}}|${NAME}|g" \
+            -e "s|{{CLASS_NAME}}|${CLASS_NAME}|g" \
+            -e "s|{{DESCRIPTION}}|${DESCRIPTION}|g" \
+            -e "s|{{HOMEPAGE}}|https://github.com/${REPO}|g" \
+            -e "s|{{SOURCE_LINE}}|${SOURCE_LINE}|g" \
+            .github/templates/formula.rb.template > "${NAME}.rb"
+        
+        echo "Generated formula:"
+        cat "${NAME}.rb"
+    
+    - name: Push to homebrew-tap
+      uses: dmnemec/copy_file_to_another_repo_action@main
+      env:
+        API_TOKEN_GITHUB: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+      with:
+        source_file: '${{ github.event.repository.name }}.rb'
+        destination_repo: '${{ github.repository_owner }}/homebrew-tap'
+        destination_folder: 'Formula'
+        user_email: 'github-actions[bot]@users.noreply.github.com'
+        user_name: 'github-actions[bot]'
+        commit_message: 'Update ${{ github.event.repository.name }} to ${{ needs.version.outputs.tag_name }}'
+
+  smoke-homebrew:
+    name: Smoke Homebrew
+    needs: [version, homebrew]
+    runs-on: macos-latest
+    
+    steps:
+    - name: Tap and install formula
+      run: |
+        brew tap ${{ github.repository_owner }}/tap
+        brew install ${{ github.event.repository.name }}
+    
+    - name: Run formula test
+      run: brew test ${{ github.event.repository.name }}
+    
+    - name: Verify CLI works
+      run: |
+        ${{ github.event.repository.name }} version
+        ${{ github.event.repository.name }} --help

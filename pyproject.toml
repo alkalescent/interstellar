@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "interstellar"
 version = "0.0.0"  # Injected from git tag at build time
@@ -27,8 +31,12 @@ Homepage = "https://github.com/alkalescent/interstellar"
 Repository = "https://github.com/alkalescent/interstellar"
 Issues = "https://github.com/alkalescent/interstellar/issues"
 
-[tool.setuptools]
-py-modules = ["cli", "tools"]
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project.scripts]
+# Entry point command uses package name from [project].name
+interstellar = "interstellar.cli:app"
 
 [dependency-groups]
 dev = ["pytest", "pytest-xdist", "pytest-cov", "nuitka", "ordered-set", "ruff", "packaging"]
@@ -38,8 +46,8 @@ addopts = "-n auto"
 testpaths = ["tests"]
 
 [tool.coverage.run]
-source = ["."]
-omit = ["tests/*", ".venv/*", "build/*", "scripts/*"]
+source = ["src"]
+omit = ["tests/*", ".venv/*", "build/*", "scripts/*", "*/__main__.py"]
 
 [tool.coverage.report]
 fail_under = 90

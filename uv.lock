@@ -404,7 +404,7 @@ wheels = [
 [[package]]
 name = "interstellar"
 version = "0.0.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "mnemonic" },
     { name = "slip39" },
