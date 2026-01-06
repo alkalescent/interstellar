@@ -345,6 +345,7 @@ jobs:
         source_file: '${{ github.event.repository.name }}.rb'
         destination_repo: '${{ github.repository_owner }}/homebrew-tap'
         destination_folder: 'Formula'
+        destination_branch: 'master'
         user_email: 'github-actions[bot]@users.noreply.github.com'
         user_name: 'github-actions[bot]'
         commit_message: 'Update ${{ github.event.repository.name }} to ${{ needs.version.outputs.tag_name }}'
