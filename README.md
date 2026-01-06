@@ -248,6 +248,7 @@ uv run python -m pytest --cov --cov-report=term-missing --cov-fail-under=90
 
 ⚠️ **Important Security Considerations:**
 
+- **Run on an airgapped machine or a fresh [Tails](https://tails.net) installation via USB with networking disabled**
 - Never share your seed phrase or private keys
 - Store mnemonic backups securely in multiple physical locations
 - SLIP39 shares should be distributed to different secure locations
