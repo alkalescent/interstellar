@@ -231,6 +231,15 @@ jobs:
       with:
         tag_name: ${{ needs.version.outputs.tag_name }}
         files: release-assets/*
+        body: |
+          ## 📦 Binary Options
+          
+          | Variant | Description | Startup Time |
+          |---------|-------------|--------------|
+          | **Portable** (`*-portable`) | Single file, no installation needed | ~10 sec |
+          | **Fast** (`*-fast.tar.gz`) | Optimized for speed, extract and run | ~1 sec |
+          
+          Choose **Portable** for convenience, **Fast** for performance.
         generate_release_notes: true
         draft: false
         prerelease: ${{ contains(needs.version.outputs.new_version, 'alpha') || contains(needs.version.outputs.new_version, 'beta') || contains(needs.version.outputs.new_version, 'rc') }}
