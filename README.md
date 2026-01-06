@@ -81,6 +81,8 @@ Download from [GitHub Releases](https://github.com/alkalescent/interstellar/rele
 | **Portable** | Single file, no installation needed | ~10 sec | `interstellar-{os}-portable` |
 | **Fast** | Optimized for speed | ~1 sec | `interstellar-{os}-fast.tar.gz` |
 
+> **Note**: In the filenames and commands, replace `{os}` with your operating system (e.g., `linux`, `macos`). The examples below use `linux`. For Windows, you may need to use a tool like 7-Zip to extract `.tar.gz` archives.
+
 For **Portable**, download and run directly:
 ```bash
 chmod +x interstellar-linux-portable
