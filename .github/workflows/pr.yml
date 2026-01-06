@@ -187,8 +187,6 @@ jobs:
     name: Smoke PyPI
     needs: version
     runs-on: ubuntu-latest
-    # Only run if TestPyPI publish succeeded
-    if: success()
     
     steps:
     - uses: actions/checkout@v4
