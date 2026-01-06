@@ -196,14 +196,12 @@ jobs:
         python-version: '3.13'
     
     - name: Wait for TestPyPI indexing
-      run: sleep 60
+      run: sleep 120
     
     - name: Install from TestPyPI
       run: |
-        pip cache purge
         pip install --index-url https://test.pypi.org/simple/ \
           --extra-index-url https://pypi.org/simple/ \
-          --no-cache-dir \
           ${{ github.event.repository.name }}==${{ needs.version.outputs.pypi_version }}
     
     - name: Run smoke tests
