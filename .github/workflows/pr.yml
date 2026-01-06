@@ -203,7 +203,6 @@ jobs:
         pip install --index-url https://test.pypi.org/simple/ \
           --extra-index-url https://pypi.org/simple/ \
           ${{ github.event.repository.name }}==${{ needs.version.outputs.pypi_version }}
-      continue-on-error: true  # TestPyPI may not have indexed yet
     
     - name: Run smoke tests
       run: python tests/smoke.py ${{ github.event.repository.name }}
