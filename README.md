@@ -72,15 +72,43 @@ cd interstellar
 pip install -e .
 ```
 
-### Build Standalone Binary
+### Pre-built Binaries
 
-From the repository root:
+Download from [GitHub Releases](https://github.com/alkalescent/interstellar/releases):
 
+| Variant | Description | Startup | Format |
+|---------|-------------|---------|--------|
+| **Portable** | Single file, no installation needed | ~10 sec | `interstellar-{os}-portable` |
+| **Fast** | Optimized for speed | ~1 sec | `interstellar-{os}-fast.tar.gz` |
+
+> **Note**: In the filenames and commands, replace `{os}` with your operating system (e.g., `linux`, `macos`). The examples below use `linux`. For Windows, you may need to use a tool like 7-Zip to extract `.tar.gz` archives.
+
+For **Portable**, download and run directly:
 ```bash
-./scripts/build.sh
+chmod +x interstellar-linux-portable
+./interstellar-linux-portable --help
 ```
 
-This creates a standalone executable using Nuitka.
+For **Fast**, extract the archive and run from within:
+```bash
+tar -xzf interstellar-linux-fast.tar.gz
+./cli.dist/interstellar --help
+```
+
+### Build from Source
+
+Build your own binaries using [Nuitka](https://nuitka.net/):
+
+```bash
+git clone https://github.com/alkalescent/interstellar.git
+cd interstellar
+
+# Build portable (single file, slower startup)
+MODE=onefile ./scripts/build.sh
+
+# Build fast (directory, faster startup)
+MODE=standalone ./scripts/build.sh
+```
 
 ## 🚀 Usage
 
@@ -187,7 +215,7 @@ interstellar reconstruct \
 interstellar reconstruct --filename shares.txt --standard SLIP39
 ```
 
-## 📁 File Format
+## 📁 Files
 
 ### Input Files
 
@@ -244,10 +272,11 @@ Run with coverage reporting (requires 90% coverage):
 uv run python -m pytest --cov --cov-report=term-missing --cov-fail-under=90
 ```
 
-## 🔐 Security Notes
+## 🔐 Security
 
 ⚠️ **Important Security Considerations:**
 
+- **Run on an airgapped machine or a fresh [Tails](https://tails.net) installation via USB with networking disabled**
 - Never share your seed phrase or private keys
 - Store mnemonic backups securely in multiple physical locations
 - SLIP39 shares should be distributed to different secure locations

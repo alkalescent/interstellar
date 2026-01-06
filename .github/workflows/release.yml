@@ -98,8 +98,8 @@ jobs:
       # Uses OIDC trusted publishing - configure at:
       # https://pypi.org/manage/account/publishing/
 
-  build-onefile:
-    name: Build Onefile (${{ matrix.os }})
+  build-portable:
+    name: Build Portable (${{ matrix.os }})
     needs: version
     runs-on: ${{ matrix.os }}
     strategy:
@@ -107,13 +107,13 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
         include:
           - os: ubuntu-latest
-            artifact_suffix: linux-onefile
+            artifact_suffix: linux-portable
             binary_name: ''
           - os: macos-latest
-            artifact_suffix: macos-onefile
+            artifact_suffix: macos-portable
             binary_name: ''
           - os: windows-latest
-            artifact_suffix: windows-onefile.exe
+            artifact_suffix: windows-portable.exe
             binary_name: .exe
     
     steps:
@@ -141,15 +141,21 @@ jobs:
         ./scripts/build.sh
       shell: bash
     
+    - name: Rename binary with platform suffix
+      run: |
+        mv ${{ github.event.repository.name }}${{ matrix.binary_name }} ${{ github.event.repository.name }}-${{ matrix.artifact_suffix }}
+        chmod +x ${{ github.event.repository.name }}-${{ matrix.artifact_suffix }} || true
+      shell: bash
+    
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: ${{ github.event.repository.name }}-${{ matrix.artifact_suffix }}
-        path: ${{ github.event.repository.name }}${{ matrix.binary_name }}
+        path: ${{ github.event.repository.name }}-${{ matrix.artifact_suffix }}
         if-no-files-found: error
 
-  build-standalone:
-    name: Build Standalone (${{ matrix.os }})
+  build-fast:
+    name: Build Fast (${{ matrix.os }})
     needs: version
     runs-on: ${{ matrix.os }}
     strategy:
@@ -189,19 +195,19 @@ jobs:
       shell: bash
     
     - name: Create archive
-      run: tar -czf "${{ github.event.repository.name }}-${{ matrix.platform }}.tar.gz" cli.dist/
+      run: tar -czf "${{ github.event.repository.name }}-${{ matrix.platform }}-fast.tar.gz" cli.dist/
       shell: bash
     
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ github.event.repository.name }}-${{ matrix.platform }}
-        path: ${{ github.event.repository.name }}-${{ matrix.platform }}.tar.gz
+        name: ${{ github.event.repository.name }}-${{ matrix.platform }}-fast
+        path: ${{ github.event.repository.name }}-${{ matrix.platform }}-fast.tar.gz
         if-no-files-found: error
 
   release:
     name: Release
-    needs: [version, build-onefile, build-standalone]
+    needs: [version, build-portable, build-fast]
     runs-on: ubuntu-latest
     
     steps:
@@ -225,6 +231,15 @@ jobs:
       with:
         tag_name: ${{ needs.version.outputs.tag_name }}
         files: release-assets/*
+        body: |
+          ## 📦 Binary Options
+          
+          | Variant | Description | Startup Time |
+          |---------|-------------|--------------|
+          | **Portable** (`*-portable`) | Single file, no installation needed | ~10 sec |
+          | **Fast** (`*-fast.tar.gz`) | Optimized for speed, extract and run | ~1 sec |
+          
+          Choose **Portable** for convenience, **Fast** for performance.
         generate_release_notes: true
         draft: false
         prerelease: ${{ contains(needs.version.outputs.new_version, 'alpha') || contains(needs.version.outputs.new_version, 'beta') || contains(needs.version.outputs.new_version, 'rc') }}
@@ -242,7 +257,7 @@ jobs:
         python-version: '3.13'
     
     - name: Wait for PyPI indexing
-      run: sleep 150
+      run: sleep 180
     
     - name: Install from PyPI
       run: pip install ${{ github.event.repository.name }}==${{ needs.version.outputs.pypi_version }}
@@ -252,21 +267,18 @@ jobs:
 
   smoke-binary:
     name: Smoke Binary (${{ matrix.os }})
-    needs: [build-onefile, build-standalone]
+    needs: [build-portable, build-fast]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         include:
           - os: ubuntu-latest
-            artifact_suffix: linux-onefile
-            binary_ext: ''
+            artifact_suffix: linux-portable
           - os: macos-latest
-            artifact_suffix: macos-onefile
-            binary_ext: ''
+            artifact_suffix: macos-portable
           - os: windows-latest
-            artifact_suffix: windows-onefile.exe
-            binary_ext: .exe
+            artifact_suffix: windows-portable.exe
     
     steps:
     - uses: actions/checkout@v4
@@ -281,11 +293,11 @@ jobs:
         name: ${{ github.event.repository.name }}-${{ matrix.artifact_suffix }}
     
     - name: Make executable
-      run: chmod +x ./${{ github.event.repository.name }}${{ matrix.binary_ext }} || true
+      run: chmod +x ./${{ github.event.repository.name }}-${{ matrix.artifact_suffix }} || true
       shell: bash
     
     - name: Run smoke tests
-      run: python tests/smoke.py ./${{ github.event.repository.name }}${{ matrix.binary_ext }}
+      run: python tests/smoke.py ./${{ github.event.repository.name }}-${{ matrix.artifact_suffix }}
 
   homebrew:
     name: Update Homebrew
@@ -333,6 +345,7 @@ jobs:
         source_file: '${{ github.event.repository.name }}.rb'
         destination_repo: '${{ github.repository_owner }}/homebrew-tap'
         destination_folder: 'Formula'
+        destination_branch: 'master'
         user_email: 'github-actions[bot]@users.noreply.github.com'
         user_name: 'github-actions[bot]'
         commit_message: 'Update ${{ github.event.repository.name }} to ${{ needs.version.outputs.tag_name }}'
