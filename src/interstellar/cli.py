@@ -63,7 +63,7 @@ app = typer.Typer(context_settings={"help_option_names": ["-h", "--help"]})
 cli = CLI()
 
 
-@app.callback(invoke_without_command=True)
+@app.callback()
 def main(
     version: Annotated[
         bool,
