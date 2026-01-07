@@ -50,7 +50,7 @@ version_help = "Show the installed version."
 
 @app.callback()
 def main(
-    version: Annotated[
+    show_version: Annotated[
         bool,
         typer.Option(
             "--version",
