@@ -29,7 +29,8 @@ class TestVersion:
         assert version_str  # Not empty
         assert version_str.startswith("v"), "Version should start with 'v'"
         # Strip 'v' prefix and validate it's a proper PEP 440 version string
-        parsed = parse_version(version_str[1:])
+        prefix = "v"
+        parsed = parse_version(version_str[len(prefix):])
         assert parsed.release, "Version must have at least one release segment"
 
 
