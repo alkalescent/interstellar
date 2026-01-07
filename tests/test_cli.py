@@ -19,11 +19,11 @@ def assert_success_with_json(result) -> dict:
 
 
 class TestVersion:
-    """Test the version CLI command."""
+    """Test the --version CLI option."""
 
     def test_version(self):
-        """Test version command returns a valid version string."""
-        result = runner.invoke(app, ["version"])
+        """Test --version option returns a valid version string."""
+        result = runner.invoke(app, ["--version"])
         assert result.exit_code == 0
         version_str = result.stdout.strip()
         assert version_str  # Not empty

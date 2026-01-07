@@ -43,8 +43,35 @@ class CLI:
         return result
 
 
+def version_callback(value: bool) -> None:
+    """Print version and exit if --version flag is passed."""
+    if value:
+        try:
+            typer.echo(get_version(PACKAGE_NAME))
+        except PackageNotFoundError:
+            typer.echo("0.0.0")
+        raise typer.Exit()
+
+
 app = typer.Typer()
 cli = CLI()
+
+
+@app.callback(invoke_without_command=True)
+def main(
+    version: Annotated[
+        bool,
+        typer.Option(
+            "--version",
+            "-v",
+            help="Show version and exit.",
+            callback=version_callback,
+            is_eager=True,
+        ),
+    ] = False,
+) -> None:
+    f"""{PACKAGE_NAME} CLI for managing cryptocurrency mnemonics."""
+    pass
 
 
 @app.command(
@@ -209,14 +236,6 @@ def reconstruct(
     }
     typer.echo(json.dumps(output))
     raise typer.Exit(code=0)
-
-
-@app.command(help="Show the installed version.")
-def version():
-    try:
-        typer.echo(get_version(PACKAGE_NAME))
-    except PackageNotFoundError:
-        typer.echo("0.0.0")
 
 
 if __name__ == "__main__":

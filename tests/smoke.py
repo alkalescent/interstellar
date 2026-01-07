@@ -29,8 +29,8 @@ def get_package_name() -> str:
 
 
 def test_version(cmd: list[str]) -> None:
-    """Test version command works."""
-    result = run([*cmd, "version"])
+    """Test --version option works."""
+    result = run([*cmd, "--version"])
     version = result.stdout.strip()
     assert version, "version output empty"
     print(f"✓ version: {version}")
@@ -48,10 +48,10 @@ def test_help(cmd: list[str]) -> None:
 def test_module_invocation() -> None:
     """Test python -m <package> works."""
     package = get_package_name()
-    result = run([sys.executable, "-m", package, "version"])
+    result = run([sys.executable, "-m", package, "--version"])
     version = result.stdout.strip()
     assert version, "module version output empty"
-    print(f"✓ python -m {package} version: {version}")
+    print(f"✓ python -m {package} --version: {version}")
 
 
 def test_imports() -> None:
@@ -73,7 +73,6 @@ def test_imports() -> None:
     assert hasattr(cli_module, "app")
     assert hasattr(cli_module, "deconstruct")
     assert hasattr(cli_module, "reconstruct")
-    assert hasattr(cli_module, "version")
 
     print(f"✓ imports: BIP39, SLIP39, __version__={pkg.__version__}")
 
