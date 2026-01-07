@@ -43,8 +43,41 @@ class CLI:
         return result
 
 
+def _print_version() -> None:
+    """Print version string with v prefix."""
+    prefix = "v"
+    try:
+        typer.echo(f"{prefix}{get_version(PACKAGE_NAME)}")
+    except PackageNotFoundError:
+        typer.echo(f"{prefix}0.0.0")
+
+
+def version_callback(value: bool) -> None:
+    """Print version and exit if --version flag is passed."""
+    if value:
+        _print_version()
+        raise typer.Exit()
+
+
 app = typer.Typer()
 cli = CLI()
+
+
+@app.callback(invoke_without_command=True)
+def main(
+    version: Annotated[
+        bool,
+        typer.Option(
+            "--version",
+            "-v",
+            help="Show version and exit.",
+            callback=version_callback,
+            is_eager=True,
+        ),
+    ] = False,
+) -> None:
+    """CLI for managing cryptocurrency mnemonics using BIP39 and SLIP39 standards."""
+    pass
 
 
 @app.command(
@@ -213,11 +246,7 @@ def reconstruct(
 
 @app.command(help="Show the installed version.")
 def version():
-    prefix = "v"
-    try:
-        typer.echo(f"{prefix}{get_version(PACKAGE_NAME)}")
-    except PackageNotFoundError:
-        typer.echo(f"{prefix}0.0.0")
+    _print_version()
 
 
 if __name__ == "__main__":
