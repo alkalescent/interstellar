@@ -43,22 +43,6 @@ class CLI:
         return result
 
 
-def _print_version() -> None:
-    """Print version string with v prefix."""
-    prefix = "v"
-    try:
-        typer.echo(f"{prefix}{get_version(PACKAGE_NAME)}")
-    except PackageNotFoundError:
-        typer.echo(f"{prefix}0.0.0")
-
-
-def version_callback(value: bool) -> None:
-    """Print version and exit if --version flag is passed."""
-    if value:
-        _print_version()
-        raise typer.Exit()
-
-
 app = typer.Typer(context_settings={"help_option_names": ["-h", "--help"]})
 cli = CLI()
 
@@ -71,7 +55,7 @@ def main(
             "--version",
             "-v",
             help="Show version and exit.",
-            callback=version_callback,
+            callback=lambda value: version() if value else None,
             is_eager=True,
         ),
     ] = False,
@@ -245,8 +229,14 @@ def reconstruct(
 
 
 @app.command(help="Show the installed version.")
-def version():
-    _print_version()
+def version() -> None:
+    """Print version string with v prefix."""
+    prefix = "v"
+    try:
+        typer.echo(f"{prefix}{get_version(PACKAGE_NAME)}")
+    except PackageNotFoundError:
+        typer.echo(f"{prefix}0.0.0")
+    raise typer.Exit(code=0)
 
 
 if __name__ == "__main__":
