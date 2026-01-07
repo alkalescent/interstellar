@@ -59,7 +59,7 @@ def version_callback(value: bool) -> None:
         raise typer.Exit()
 
 
-app = typer.Typer()
+app = typer.Typer(context_settings={"help_option_names": ["-h", "--help"]})
 cli = CLI()
 
 
