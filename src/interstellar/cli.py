@@ -47,6 +47,7 @@ app = typer.Typer(context_settings={"help_option_names": ["-h", "--help"]})
 cli = CLI()
 version_help = "Show the installed version."
 
+
 @app.callback()
 def main(
     version: Annotated[
