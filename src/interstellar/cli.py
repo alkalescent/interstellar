@@ -45,7 +45,7 @@ class CLI:
 
 app = typer.Typer(context_settings={"help_option_names": ["-h", "--help"]})
 cli = CLI()
-
+version_help = "Show the installed version."
 
 @app.callback()
 def main(
@@ -54,7 +54,7 @@ def main(
         typer.Option(
             "--version",
             "-v",
-            help="Show version and exit.",
+            help=version_help,
             callback=lambda value: version() if value else None,
             is_eager=True,
         ),
@@ -228,7 +228,7 @@ def reconstruct(
     raise typer.Exit(code=0)
 
 
-@app.command(help="Show the installed version.")
+@app.command(help=version_help)
 def version() -> None:
     """Print version string with v prefix."""
     prefix = "v"
