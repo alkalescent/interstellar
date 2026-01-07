@@ -51,27 +51,36 @@ cli = CLI()
     help="Split a BIP39 mnemonic into parts or SLIP39 shares for secure backup."
 )
 def deconstruct(
-    mnemonic: Annotated[str, typer.Option(help="BIP39 mnemonic to deconstruct")] = "",
+    mnemonic: Annotated[
+        str, typer.Option("--mnemonic", "-m", help="BIP39 mnemonic to deconstruct")
+    ] = "",
     filename: Annotated[
-        str, typer.Option(help="File containing the BIP39 mnemonic")
+        str, typer.Option("--filename", "-f", help="File containing the BIP39 mnemonic")
     ] = "",
     standard: Annotated[
-        str, typer.Option(help="Output format: 'BIP39' or 'SLIP39'")
+        str, typer.Option("--standard", "-s", help="Output format: 'BIP39' or 'SLIP39'")
     ] = "SLIP39",
     required: Annotated[
         int,
         typer.Option(
-            help="Number of required shares for SLIP39 reconstruction (e.g. 2 of 3)"
+            "--required",
+            "-r",
+            help="Number of required shares for SLIP39 reconstruction (e.g. 2 of 3)",
         ),
     ] = 2,
     total: Annotated[
         int,
         typer.Option(
-            help="Number of total shares for SLIP39 reconstruction (e.g. 3 of 3)"
+            "--total",
+            "-t",
+            help="Number of total shares for SLIP39 reconstruction (e.g. 3 of 3)",
         ),
     ] = 3,
     digits: Annotated[
-        bool, typer.Option(help="Output format: use digits instead of words")
+        bool,
+        typer.Option(
+            "--digits", "-d", help="Output format: use digits instead of words"
+        ),
     ] = False,
 ):
     cli.enforce_standard(standard)
@@ -133,16 +142,30 @@ def deconstruct(
 @app.command(help="Reconstruct a BIP39 mnemonic from SLIP39 shares or BIP39 parts.")
 def reconstruct(
     shares: Annotated[
-        str, typer.Option(help="SLIP39 shares to reconstruct", parser=cli.parse_2D_list)
+        str,
+        typer.Option(
+            "--shares",
+            "-x",
+            help="SLIP39 shares to reconstruct",
+            parser=cli.parse_2D_list,
+        ),
     ] = "",
     filename: Annotated[
-        str, typer.Option(help="File containing the SLIP39 shares (newline separated)")
+        str,
+        typer.Option(
+            "--filename",
+            "-f",
+            help="File containing the SLIP39 shares (newline separated)",
+        ),
     ] = "",
     standard: Annotated[
-        str, typer.Option(help="Input format: 'BIP39' or 'SLIP39'")
+        str, typer.Option("--standard", "-s", help="Input format: 'BIP39' or 'SLIP39'")
     ] = "SLIP39",
     digits: Annotated[
-        bool, typer.Option(help="Input format: use digits instead of words")
+        bool,
+        typer.Option(
+            "--digits", "-d", help="Input format: use digits instead of words"
+        ),
     ] = False,
 ):
     cli.enforce_standard(standard)
