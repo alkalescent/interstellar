@@ -83,11 +83,15 @@ def main() -> None:
     package = get_package_name()
     cmd = sys.argv[1:] if len(sys.argv) > 1 else [str(package)]
 
+    # Detect if we're testing a binary (path-like argument) vs installed package
+    is_binary = len(cmd) > 0 and (cmd[0].startswith("./") or cmd[0].startswith("/"))
+
     print(f"Running smoke tests with: {' '.join(cmd)}")
     try:
-        # Always run import and module tests (package-level verification)
-        test_imports()
-        test_module_invocation()
+        # Only run package-level tests if not testing a binary
+        if not is_binary:
+            test_imports()
+            test_module_invocation()
 
         # Run CLI tests with provided command
         test_version(cmd)
