@@ -24,7 +24,6 @@ var/
 wheels/
 share/python-wheels/
 *.egg-info/
-/interstellar.egg-info/  # Prevent stale root egg-info (should only exist under src/)
 .installed.cfg
 *.egg
 MANIFEST
