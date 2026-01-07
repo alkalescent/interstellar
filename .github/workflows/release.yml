@@ -287,6 +287,12 @@ jobs:
       with:
         python-version: '3.13'
     
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+    
+    - name: Install package (for import tests)
+      run: uv sync
+    
     - name: Download binary
       uses: actions/download-artifact@v4
       with:
@@ -297,7 +303,7 @@ jobs:
       shell: bash
     
     - name: Run smoke tests
-      run: python tests/smoke.py ./${{ github.event.repository.name }}-${{ matrix.artifact_suffix }}
+      run: uv run python tests/smoke.py ./${{ github.event.repository.name }}-${{ matrix.artifact_suffix }}
 
   homebrew:
     name: Update Homebrew

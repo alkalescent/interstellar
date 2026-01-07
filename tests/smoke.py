@@ -1,5 +1,29 @@
 #!/usr/bin/env python3
-"""Smoke tests for verifying installation and CLI functionality."""
+"""Smoke tests for verifying installation and CLI functionality.
+
+Prerequisites:
+    The package must be installed (e.g., `uv sync` or `pip install -e .`) before
+    running these tests, as they verify both package imports and CLI functionality.
+
+Usage:
+    # Test installed package CLI
+    python tests/smoke.py interstellar
+
+    # Test a specific binary
+    python tests/smoke.py ./interstellar-macos-portable
+
+Alternative approach:
+    If you want to test binaries WITHOUT requiring the package to be installed,
+    you could add a --binary flag to skip import tests:
+
+        is_binary = "--binary" in sys.argv or cmd[0].startswith("./")
+        if not is_binary:
+            test_imports()
+            test_module_invocation()
+
+    However, the current approach requires `uv sync` in CI workflows to ensure
+    comprehensive testing of both the binary AND the package imports.
+"""
 
 import importlib
 import subprocess
@@ -33,6 +57,7 @@ def test_version(cmd: list[str]) -> None:
     result = run([*cmd, "version"])
     version = result.stdout.strip()
     assert version, "version output empty"
+    assert version.startswith("v"), "version should start with 'v'"
     print(f"✓ version: {version}")
 
 
@@ -86,11 +111,11 @@ def main() -> None:
 
     print(f"Running smoke tests with: {' '.join(cmd)}")
     try:
-        # Always run import and module tests (package-level verification)
+        # Package-level verification (requires package to be installed)
         test_imports()
         test_module_invocation()
 
-        # Run CLI tests with provided command
+        # CLI tests with provided command
         test_version(cmd)
         test_help(cmd)
         print("All smoke tests passed!")

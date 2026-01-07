@@ -27,8 +27,9 @@ class TestVersion:
         assert result.exit_code == 0
         version_str = result.stdout.strip()
         assert version_str  # Not empty
-        # Validate it's a proper PEP 440 version string
-        parsed = parse_version(version_str)
+        assert version_str.startswith("v"), "Version should start with 'v'"
+        # Strip 'v' prefix and validate it's a proper PEP 440 version string
+        parsed = parse_version(version_str.removeprefix("v"))
         assert parsed.release, "Version must have at least one release segment"
 
 

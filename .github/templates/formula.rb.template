@@ -30,7 +30,7 @@ class {{CLASS_NAME}} < Formula
 
   test do
     # Test version command
-    assert_match(/\d+\.\d+\.\d+/, shell_output("#{bin}/{{NAME}} version"))
+    assert_match(/v\d+\.\d+\.\d+/, shell_output("#{bin}/{{NAME}} version"))
 
     # Test help command shows expected subcommands
     help_output = shell_output("#{bin}/{{NAME}} --help")

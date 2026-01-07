@@ -17,24 +17,47 @@ logging.getLogger("slip39").setLevel(logging.ERROR)
 class CLI:
     """Command Line Interface for BIP39 mnemonic generation and validation."""
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """Initialize CLI with BIP39 and SLIP39 handlers."""
         self.bip39 = BIP39()
         self.slip39 = SLIP39()
 
     def get_mnemos(self, filename: str) -> list[list[str]]:
-        """Get the mnemos from a file."""
+        """Read mnemonics from a file.
+
+        Args:
+            filename: Path to file containing mnemonics.
+
+        Returns:
+            2D list of mnemonic parts, one row per line.
+        """
         with open(filename) as f:
             return [
                 [subline.strip() for subline in line.strip().split(",")]
                 for line in f.readlines()
             ]
 
-    def enforce_standard(self, standard: str):
+    def enforce_standard(self, standard: str) -> None:
+        """Validate that standard is either 'BIP39' or 'SLIP39'.
+
+        Args:
+            standard: The standard to validate.
+
+        Raises:
+            ValueError: If standard is not 'BIP39' or 'SLIP39'.
+        """
         if standard.upper() not in ["SLIP39", "BIP39"]:
             raise ValueError("Standard must be either 'SLIP39' or 'BIP39'")
 
     def parse_2D_list(self, value: str) -> list[list[str]]:
-        """Parse a string representation of a 2D list into an actual 2D list."""
+        """Parse a string representation of a 2D list.
+
+        Args:
+            value: Semicolon-separated rows, comma-separated columns.
+
+        Returns:
+            2D list of strings.
+        """
         value = value.strip()
         if not value:
             return []
@@ -43,37 +66,65 @@ class CLI:
         return result
 
 
-app = typer.Typer()
+app = typer.Typer(context_settings={"help_option_names": ["-h", "--help"]})
 cli = CLI()
+version_help = "Show the installed version."
+
+
+@app.callback()
+def main(
+    show_version: Annotated[
+        bool,
+        typer.Option(
+            "--version",
+            "-v",
+            help=version_help,
+            callback=lambda value: version() if value else None,
+            is_eager=True,
+        ),
+    ] = False,
+) -> None:
+    """CLI for managing cryptocurrency mnemonics using BIP39 and SLIP39 standards."""
+    pass
 
 
 @app.command(
     help="Split a BIP39 mnemonic into parts or SLIP39 shares for secure backup."
 )
 def deconstruct(
-    mnemonic: Annotated[str, typer.Option(help="BIP39 mnemonic to deconstruct")] = "",
+    mnemonic: Annotated[
+        str, typer.Option("--mnemonic", "-m", help="BIP39 mnemonic to deconstruct")
+    ] = "",
     filename: Annotated[
-        str, typer.Option(help="File containing the BIP39 mnemonic")
+        str, typer.Option("--filename", "-f", help="File containing the BIP39 mnemonic")
     ] = "",
     standard: Annotated[
-        str, typer.Option(help="Output format: 'BIP39' or 'SLIP39'")
+        str, typer.Option("--standard", "-s", help="Output format: 'BIP39' or 'SLIP39'")
     ] = "SLIP39",
     required: Annotated[
         int,
         typer.Option(
-            help="Number of required shares for SLIP39 reconstruction (e.g. 2 of 3)"
+            "--required",
+            "-r",
+            help="Number of required shares for SLIP39 reconstruction (e.g. 2 of 3)",
         ),
     ] = 2,
     total: Annotated[
         int,
         typer.Option(
-            help="Number of total shares for SLIP39 reconstruction (e.g. 3 of 3)"
+            "--total",
+            "-t",
+            help="Number of total shares for SLIP39 reconstruction (e.g. 3 of 3)",
         ),
     ] = 3,
     digits: Annotated[
-        bool, typer.Option(help="Output format: use digits instead of words")
+        bool,
+        typer.Option(
+            "--digits", "-d", help="Output format: use digits instead of words"
+        ),
     ] = False,
-):
+) -> None:
+    """Split a BIP39 mnemonic into parts or SLIP39 shares."""
     cli.enforce_standard(standard)
     if not mnemonic and filename:
         try:
@@ -133,18 +184,33 @@ def deconstruct(
 @app.command(help="Reconstruct a BIP39 mnemonic from SLIP39 shares or BIP39 parts.")
 def reconstruct(
     shares: Annotated[
-        str, typer.Option(help="SLIP39 shares to reconstruct", parser=cli.parse_2D_list)
+        str,
+        typer.Option(
+            "--shares",
+            "-x",
+            help="SLIP39 shares to reconstruct",
+            parser=cli.parse_2D_list,
+        ),
     ] = "",
     filename: Annotated[
-        str, typer.Option(help="File containing the SLIP39 shares (newline separated)")
+        str,
+        typer.Option(
+            "--filename",
+            "-f",
+            help="File containing the SLIP39 shares (newline separated)",
+        ),
     ] = "",
     standard: Annotated[
-        str, typer.Option(help="Input format: 'BIP39' or 'SLIP39'")
+        str, typer.Option("--standard", "-s", help="Input format: 'BIP39' or 'SLIP39'")
     ] = "SLIP39",
     digits: Annotated[
-        bool, typer.Option(help="Input format: use digits instead of words")
+        bool,
+        typer.Option(
+            "--digits", "-d", help="Input format: use digits instead of words"
+        ),
     ] = False,
-):
+) -> None:
+    """Reconstruct a BIP39 mnemonic from SLIP39 shares or BIP39 parts."""
     cli.enforce_standard(standard)
     if not shares and filename:
         try:
@@ -188,12 +254,15 @@ def reconstruct(
     raise typer.Exit(code=0)
 
 
-@app.command(help="Show the installed version.")
-def version():
+@app.command(help=version_help)
+def version() -> None:
+    """Display the installed package version."""
+    prefix = "v"
     try:
-        typer.echo(get_version(PACKAGE_NAME))
+        typer.echo(f"{prefix}{get_version(PACKAGE_NAME)}")
     except PackageNotFoundError:
-        typer.echo("0.0.0")
+        typer.echo(f"{prefix}0.0.0")
+    raise typer.Exit(code=0)
 
 
 if __name__ == "__main__":
