@@ -19,16 +19,17 @@ def assert_success_with_json(result) -> dict:
 
 
 class TestVersion:
-    """Test the --version CLI option."""
+    """Test the version CLI command."""
 
     def test_version(self):
-        """Test --version option returns a valid version string."""
-        result = runner.invoke(app, ["--version"])
+        """Test version command returns a valid version string."""
+        result = runner.invoke(app, ["version"])
         assert result.exit_code == 0
         version_str = result.stdout.strip()
         assert version_str  # Not empty
-        # Validate it's a proper PEP 440 version string
-        parsed = parse_version(version_str)
+        assert version_str.startswith("v"), "Version should start with 'v'"
+        # Strip 'v' prefix and validate it's a proper PEP 440 version string
+        parsed = parse_version(version_str[1:])
         assert parsed.release, "Version must have at least one release segment"
 
 
