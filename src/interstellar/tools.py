@@ -99,10 +99,7 @@ class BIP39:
 
 
 class SLIP39:
-    """
-    SLIP39 implementation for generating and reconstructing
-    mnemonic phrases.
-    """
+    """SLIP39 implementation for generating and reconstructing mnemonic phrases."""
 
     def __init__(self) -> None:
         """Initialize SLIP39 handler with wordlist and mapping."""
