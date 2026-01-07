@@ -231,7 +231,7 @@ def reconstruct(
 
 @app.command(help=version_help)
 def version() -> None:
-    """Print version string with v prefix."""
+    """Display the installed package version."""
     prefix = "v"
     try:
         typer.echo(f"{prefix}{get_version(PACKAGE_NAME)}")
