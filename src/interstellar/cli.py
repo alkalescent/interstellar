@@ -46,10 +46,11 @@ class CLI:
 def version_callback(value: bool) -> None:
     """Print version and exit if --version flag is passed."""
     if value:
+        prefix = "v"
         try:
-            typer.echo(get_version(PACKAGE_NAME))
+            typer.echo(f"{prefix}{get_version(PACKAGE_NAME)}")
         except PackageNotFoundError:
-            typer.echo("0.0.0")
+            typer.echo(f"{prefix}0.0.0")
         raise typer.Exit()
 
 
