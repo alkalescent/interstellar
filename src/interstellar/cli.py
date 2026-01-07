@@ -17,24 +17,47 @@ logging.getLogger("slip39").setLevel(logging.ERROR)
 class CLI:
     """Command Line Interface for BIP39 mnemonic generation and validation."""
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """Initialize CLI with BIP39 and SLIP39 handlers."""
         self.bip39 = BIP39()
         self.slip39 = SLIP39()
 
     def get_mnemos(self, filename: str) -> list[list[str]]:
-        """Get the mnemos from a file."""
+        """Read mnemonics from a file.
+
+        Args:
+            filename: Path to file containing mnemonics.
+
+        Returns:
+            2D list of mnemonic parts, one row per line.
+        """
         with open(filename) as f:
             return [
                 [subline.strip() for subline in line.strip().split(",")]
                 for line in f.readlines()
             ]
 
-    def enforce_standard(self, standard: str):
+    def enforce_standard(self, standard: str) -> None:
+        """Validate that standard is either 'BIP39' or 'SLIP39'.
+
+        Args:
+            standard: The standard to validate.
+
+        Raises:
+            ValueError: If standard is not 'BIP39' or 'SLIP39'.
+        """
         if standard.upper() not in ["SLIP39", "BIP39"]:
             raise ValueError("Standard must be either 'SLIP39' or 'BIP39'")
 
     def parse_2D_list(self, value: str) -> list[list[str]]:
-        """Parse a string representation of a 2D list into an actual 2D list."""
+        """Parse a string representation of a 2D list.
+
+        Args:
+            value: Semicolon-separated rows, comma-separated columns.
+
+        Returns:
+            2D list of strings.
+        """
         value = value.strip()
         if not value:
             return []
@@ -100,7 +123,8 @@ def deconstruct(
             "--digits", "-d", help="Output format: use digits instead of words"
         ),
     ] = False,
-):
+) -> None:
+    """Split a BIP39 mnemonic into parts or SLIP39 shares."""
     cli.enforce_standard(standard)
     if not mnemonic and filename:
         try:
@@ -185,7 +209,8 @@ def reconstruct(
             "--digits", "-d", help="Input format: use digits instead of words"
         ),
     ] = False,
-):
+) -> None:
+    """Reconstruct a BIP39 mnemonic from SLIP39 shares or BIP39 parts."""
     cli.enforce_standard(standard)
     if not shares and filename:
         try:
