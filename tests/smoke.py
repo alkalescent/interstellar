@@ -58,7 +58,7 @@ def test_version(cmd: list[str]) -> None:
     version = result.stdout.strip()
     assert version, "version output empty"
     assert version.startswith("v"), "version should start with 'v'"
-    print(f"✓ version: {version}")
+    print(f"[+] version: {version}")
 
 
 def test_help(cmd: list[str]) -> None:
@@ -67,7 +67,7 @@ def test_help(cmd: list[str]) -> None:
     out = result.stdout
     assert "deconstruct" in out, "missing deconstruct command"
     assert "reconstruct" in out, "missing reconstruct command"
-    print("✓ help")
+    print("[+] help")
 
 
 def test_module_invocation() -> None:
@@ -76,7 +76,7 @@ def test_module_invocation() -> None:
     result = run([sys.executable, "-m", package, "version"])
     version = result.stdout.strip()
     assert version, "module version output empty"
-    print(f"✓ python -m {package} version: {version}")
+    print(f"[+] python -m {package} version: {version}")
 
 
 def test_imports() -> None:
@@ -100,7 +100,7 @@ def test_imports() -> None:
     assert hasattr(cli_module, "reconstruct")
     assert hasattr(cli_module, "version")
 
-    print(f"✓ imports: BIP39, SLIP39, __version__={pkg.__version__}")
+    print(f"[+] imports: BIP39, SLIP39, __version__={pkg.__version__}")
 
 
 def main() -> None:

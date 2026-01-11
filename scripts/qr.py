@@ -91,10 +91,10 @@ def main() -> None:
         output_path = assets_dir / f"qr_{currency}.png"
 
         if generate_qr_image(address, output_path):
-            print(f"  ✓ Generated: {output_path}")
+            print(f"[+] Generated: {output_path}")
             changes = True
         else:
-            print(f"  - Unchanged: {output_path}")
+            print(f"[-] Unchanged: {output_path}")
 
     if changes:
         print("QR codes updated!")
