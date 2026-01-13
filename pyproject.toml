@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.13"
 license = "MIT"
 authors = [
-    {name = "interstellar contributors"}
+    { name = "Krish Suchak" }
 ]
 keywords = ["cryptocurrency", "mnemonic", "bip39", "slip39", "shamir", "hdwallet"]
 classifiers = [
