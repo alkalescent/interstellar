@@ -37,12 +37,12 @@ Love this tool? Your support means the world! ❤️
   </tr>
   <tr>
     <td><strong>ɱ XMR</strong></td>
-    <td><code>YOUR_XMR_ADDRESS</code></td>
+    <td><code>463fMSWyDrk9DVQ8QCiAir8TQd4h3aRAiDGA8CKKjknGaip7cnHGmS7bQmxSiS2aYtE9tT31Zf7dSbK1wyVARNgA9pkzVxX</code></td>
     <td><img src="assets/qr_xmr.png" width="80" /></td>
   </tr>
   <tr>
     <td><strong>◈ BNB</strong></td>
-    <td><code>YOUR_BNB_ADDRESS</code></td>
+    <td><code>0x7cdB1861AC1B4385521a6e16dF198e7bc43fDE5f</code></td>
     <td><img src="assets/qr_bnb.png" width="80" /></td>
   </tr>
 </table>
