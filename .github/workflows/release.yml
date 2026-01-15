@@ -24,7 +24,7 @@ jobs:
       pypi_version: ${{ steps.set-version.outputs.pypi_version }}
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         fetch-depth: 0
         token: ${{ secrets.GITHUB_TOKEN }}
@@ -64,7 +64,7 @@ jobs:
       url: https://pypi.org/p/${{ github.event.repository.name }}
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         ref: master
         fetch-depth: 1
@@ -73,12 +73,12 @@ jobs:
       run: git pull origin master
     
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: '3.13'
     
     - name: Install uv
-      uses: astral-sh/setup-uv@v4
+      uses: astral-sh/setup-uv@v7
     
     - name: Inject version from tag
       run: |
@@ -117,7 +117,7 @@ jobs:
             binary_name: .exe
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         ref: master
     
@@ -125,12 +125,12 @@ jobs:
       run: git pull origin master
     
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: '3.13'
     
     - name: Install uv
-      uses: astral-sh/setup-uv@v4
+      uses: astral-sh/setup-uv@v7
     
     - name: Build onefile binary
       env:
@@ -148,7 +148,7 @@ jobs:
       shell: bash
     
     - name: Upload artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: ${{ github.event.repository.name }}-${{ matrix.artifact_suffix }}
         path: ${{ github.event.repository.name }}-${{ matrix.artifact_suffix }}
@@ -170,7 +170,7 @@ jobs:
             platform: windows
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         ref: master
     
@@ -178,12 +178,12 @@ jobs:
       run: git pull origin master
     
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: '3.13'
     
     - name: Install uv
-      uses: astral-sh/setup-uv@v4
+      uses: astral-sh/setup-uv@v7
     
     - name: Build standalone distribution
       env:
@@ -199,7 +199,7 @@ jobs:
       shell: bash
     
     - name: Upload artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: ${{ github.event.repository.name }}-${{ matrix.platform }}-fast
         path: ${{ github.event.repository.name }}-${{ matrix.platform }}-fast.tar.gz
@@ -211,12 +211,12 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         ref: master
     
     - name: Download all artifacts
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v5
       with:
         path: artifacts
     
@@ -250,9 +250,9 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     
-    - uses: actions/setup-python@v5
+    - uses: actions/setup-python@v6
       with:
         python-version: '3.13'
     
@@ -281,20 +281,20 @@ jobs:
             artifact_suffix: windows-portable.exe
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     
-    - uses: actions/setup-python@v5
+    - uses: actions/setup-python@v6
       with:
         python-version: '3.13'
     
     - name: Install uv
-      uses: astral-sh/setup-uv@v4
+      uses: astral-sh/setup-uv@v7
     
     - name: Install package (for import tests)
       run: uv sync
     
     - name: Download binary
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v5
       with:
         name: ${{ github.event.repository.name }}-${{ matrix.artifact_suffix }}
     
@@ -311,7 +311,7 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     
     - name: Generate formula from template
       run: |
@@ -332,29 +332,31 @@ jobs:
         # Build source lines for release (url + sha256 + head)
         SOURCE_LINE="url \"${TARBALL_URL}\"\n  sha256 \"${SHA256}\"\n  head \"https://github.com/${REPO}.git\", branch: \"master\""
         
-        # Generate formula from template
+        # Generate formula from template into Formula directory
+        mkdir -p Formula
         sed -e "s|{{NAME}}|${NAME}|g" \
             -e "s|{{CLASS_NAME}}|${CLASS_NAME}|g" \
             -e "s|{{DESCRIPTION}}|${DESCRIPTION}|g" \
             -e "s|{{HOMEPAGE}}|https://github.com/${REPO}|g" \
             -e "s|{{SOURCE_LINE}}|${SOURCE_LINE}|g" \
-            .github/templates/formula.rb.template > "${NAME}.rb"
+            .github/templates/formula.rb.template > "Formula/${NAME}.rb"
         
         echo "Generated formula:"
-        cat "${NAME}.rb"
+        cat "Formula/${NAME}.rb"
     
     - name: Push to homebrew-tap
-      uses: dmnemec/copy_file_to_another_repo_action@main
+      uses: cpina/github-action-push-to-another-repository@v1
       env:
         API_TOKEN_GITHUB: ${{ secrets.HOMEBREW_TAP_TOKEN }}
       with:
-        source_file: '${{ github.event.repository.name }}.rb'
-        destination_repo: '${{ github.repository_owner }}/homebrew-tap'
-        destination_folder: 'Formula'
-        destination_branch: 'master'
-        user_email: 'github-actions[bot]@users.noreply.github.com'
-        user_name: 'github-actions[bot]'
-        commit_message: 'Update ${{ github.event.repository.name }} to ${{ needs.version.outputs.tag_name }}'
+        source-directory: 'Formula'
+        destination-github-username: '${{ github.repository_owner }}'
+        destination-repository-name: 'homebrew-tap'
+        target-directory: 'Formula'
+        target-branch: 'master'
+        user-email: 'github-actions[bot]@users.noreply.github.com'
+        user-name: 'github-actions[bot]'
+        commit-message: 'Update ${{ github.event.repository.name }} to ${{ needs.version.outputs.tag_name }}'
 
   smoke-homebrew:
     name: Smoke Homebrew

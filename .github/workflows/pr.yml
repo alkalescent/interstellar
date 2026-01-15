@@ -22,18 +22,18 @@ jobs:
     # Skip if triggered by QR code update commit to prevent infinite loop
     if: "!contains(github.event.head_commit.message, '[skip-qr]')"
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         ref: ${{ github.head_ref }}
         token: ${{ secrets.GITHUB_TOKEN }}
     
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: '3.13'
     
     - name: Install uv
-      uses: astral-sh/setup-uv@v4
+      uses: astral-sh/setup-uv@v7
     
     - name: Install dependencies
       run: uv sync
@@ -62,7 +62,7 @@ jobs:
       url: https://test.pypi.org/p/${{ github.event.repository.name }}
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         fetch-depth: 0  # Need full history for version calculation
     
@@ -80,12 +80,12 @@ jobs:
         INITIAL_VERSION: 1.0.3
     
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: '3.13'
     
     - name: Install uv
-      uses: astral-sh/setup-uv@v4
+      uses: astral-sh/setup-uv@v7
     
     - name: Update version in pyproject.toml
       id: set-version
@@ -119,7 +119,7 @@ jobs:
         # https://test.pypi.org/manage/account/publishing/
     
     - name: Comment version info on PR
-      uses: actions/github-script@v7
+      uses: actions/github-script@v8
       with:
         script: |
           const oldTag = '${{ steps.version.outputs.old_tag }}' || 'none';
@@ -189,9 +189,9 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     
-    - uses: actions/setup-python@v5
+    - uses: actions/setup-python@v6
       with:
         python-version: '3.13'
     
@@ -213,7 +213,7 @@ jobs:
     runs-on: macos-latest
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     
     - name: Create local tap and generate formula
       run: |
