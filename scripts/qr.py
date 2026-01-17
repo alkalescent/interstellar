@@ -20,7 +20,9 @@ def parse_addresses(readme: Path) -> dict[str, str]:
 
     # Match HTML table rows with currency and code-wrapped address
     # Pattern: <td><strong>₿ BTC</strong></td> ... <td><code>address</code></td>
-    pattern = r"<td><strong>[₿Ξɱ◈]?\s*(\w+)</strong></td>\s*<td><code>([^<]+)</code></td>"
+    pattern = (
+        r"<td><strong>[₿Ξɱ◈]?\s*(\w+)</strong></td>\s*<td><code>([^<]+)</code></td>"
+    )
 
     addresses = {}
     for match in re.finditer(pattern, content):
