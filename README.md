@@ -142,7 +142,6 @@ interstellar deconstruct --filename seed.txt
 - `--mnemonic`: BIP39 mnemonic to deconstruct (default: empty, reads from file)
 - `--filename`: File containing the BIP39 mnemonic (default: empty)
 - `--standard`: Output format: `BIP39` or `SLIP39` (default: `SLIP39`)
-- `--split`: Number of BIP39 parts to create (default: `2`)
 - `--required`: Required shares for SLIP39 reconstruction (default: `2`)
 - `--total`: Total SLIP39 shares to generate (default: `3`)
 - `--digits`: Output numeric format instead of words (default: `false`)
@@ -181,8 +180,7 @@ interstellar deconstruct \
 ```bash
 interstellar deconstruct \
   --mnemonic "word1 word2 ... word24" \
-  --standard BIP39 \
-  --split 2
+  --standard BIP39
 ```
 
 ### Reconstruct Command
