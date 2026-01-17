@@ -35,6 +35,16 @@ Love this tool? Your support means the world! ❤️
     <td><code>0x7cdB1861AC1B4385521a6e16dF198e7bc43fDE5f</code></td>
     <td><img src="assets/qr_eth.png" width="80" /></td>
   </tr>
+  <tr>
+    <td><strong>ɱ XMR</strong></td>
+    <td><code>463fMSWyDrk9DVQ8QCiAir8TQd4h3aRAiDGA8CKKjknGaip7cnHGmS7bQmxSiS2aYtE9tT31Zf7dSbK1wyVARNgA9pkzVxX</code></td>
+    <td><img src="assets/qr_xmr.png" width="80" /></td>
+  </tr>
+  <tr>
+    <td><strong>◈ BNB</strong></td>
+    <td><code>0x7cdB1861AC1B4385521a6e16dF198e7bc43fDE5f</code></td>
+    <td><img src="assets/qr_bnb.png" width="80" /></td>
+  </tr>
 </table>
 
 ## 📦 Installation
@@ -132,7 +142,6 @@ interstellar deconstruct --filename seed.txt
 - `--mnemonic`: BIP39 mnemonic to deconstruct (default: empty, reads from file)
 - `--filename`: File containing the BIP39 mnemonic (default: empty)
 - `--standard`: Output format: `BIP39` or `SLIP39` (default: `SLIP39`)
-- `--split`: Number of BIP39 parts to create (default: `2`)
 - `--required`: Required shares for SLIP39 reconstruction (default: `2`)
 - `--total`: Total SLIP39 shares to generate (default: `3`)
 - `--digits`: Output numeric format instead of words (default: `false`)
@@ -171,8 +180,7 @@ interstellar deconstruct \
 ```bash
 interstellar deconstruct \
   --mnemonic "word1 word2 ... word24" \
-  --standard BIP39 \
-  --split 2
+  --standard BIP39
 ```
 
 ### Reconstruct Command

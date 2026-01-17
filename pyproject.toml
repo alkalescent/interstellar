@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "interstellar"
@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.13"
 license = "MIT"
 authors = [
-    {name = "interstellar contributors"}
+    { name = "Krish Suchak" }
 ]
 keywords = ["cryptocurrency", "mnemonic", "bip39", "slip39", "shamir", "hdwallet"]
 classifiers = [
@@ -31,8 +31,8 @@ Homepage = "https://github.com/alkalescent/interstellar"
 Repository = "https://github.com/alkalescent/interstellar"
 Issues = "https://github.com/alkalescent/interstellar/issues"
 
-[tool.setuptools.packages.find]
-where = ["src"]
+[tool.hatch.build.targets.wheel]
+packages = ["src/interstellar"]
 
 [project.scripts]
 # Entry point command uses package name from [project].name
