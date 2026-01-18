@@ -79,7 +79,7 @@ Clone the repository and install in development mode:
 ```bash
 git clone https://github.com/alkalescent/interstellar.git
 cd interstellar
-pip install -e .
+make install DEV=1  # Install with dev dependencies
 ```
 
 ### Pre-built Binaries
