@@ -59,7 +59,7 @@ brew install interstellar
 ### PyPI (Recommended)
 
 ```bash
-pip install interstellar
+uv pip install interstellar
 ```
 
 After installation, use either the command directly or as a Python module:
@@ -114,10 +114,10 @@ git clone https://github.com/alkalescent/interstellar.git
 cd interstellar
 
 # Build portable (single file, slower startup)
-MODE=onefile ./scripts/build.sh
+MODE=onefile make build
 
 # Build fast (directory, faster startup)
-MODE=standalone ./scripts/build.sh
+MODE=standalone make build
 ```
 
 ## 🚀 Usage
