@@ -1,5 +1,9 @@
 NAME := $(shell basename $(CURDIR))
 
+# DEV=1 includes dev dependencies
+UV_SYNC := uv sync $(if $(DEV),--dev,--no-dev)
+UV_SYNC_FROZEN := uv sync --frozen $(if $(DEV),--dev,--no-dev)
+
 .PHONY: lint format smoke test cov build clean qr help all
 
 help:
@@ -13,6 +17,12 @@ help:
 	@echo "  qr     - Generate QR codes for donation addresses"
 	@echo "  clean  - Remove build artifacts"
 	@echo "  all    - Run lint, test, and build"
+
+install:
+	$(UV_SYNC)
+
+ci:
+	$(UV_SYNC_FROZEN)
 
 lint:
 	uv run ruff check .
