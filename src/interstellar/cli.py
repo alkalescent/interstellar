@@ -262,6 +262,7 @@ def version() -> None:
         typer.echo(f"{prefix}{get_version(PACKAGE_NAME)}")
     except PackageNotFoundError:
         typer.echo(f"{prefix}0.0.0")
+    # Exit is needed for the --version flag callback to terminate execution.
     raise typer.Exit(code=0)
 
 
