@@ -68,8 +68,8 @@ After installation, use either the command directly or as a Python module:
 # Direct command
 interstellar --help
 
-# As Python module
-python -m interstellar --help
+# As Python module (if direct command not in PATH)
+uv run python -m interstellar --help
 ```
 
 ### From Source

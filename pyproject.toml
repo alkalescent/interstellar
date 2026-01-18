@@ -39,7 +39,7 @@ packages = ["src/interstellar"]
 interstellar = "interstellar.cli:app"
 
 [dependency-groups]
-dev = ["pytest", "pytest-xdist", "pytest-cov", "nuitka", "ordered-set", "ruff", "packaging"]
+dev = ["pytest", "pytest-xdist", "pytest-cov", "nuitka", "ordered-set", "ruff", "packaging", "qrcode[pil]"]
 
 [tool.pytest.ini_options]
 addopts = "-n auto"
