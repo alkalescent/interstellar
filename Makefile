@@ -1,18 +1,30 @@
 NAME := $(shell basename $(CURDIR))
 
-.PHONY: lint format smoke test cov build clean qr help all
+# DEV=1 includes dev dependencies
+UV_SYNC := uv sync $(if $(DEV),--dev,--no-dev)
+UV_SYNC_FROZEN := uv sync --frozen $(if $(DEV),--dev,--no-dev)
+
+.PHONY: install ci lint format smoke test cov build clean qr help all
 
 help:
 	@echo "Available targets:"
-	@echo "  lint   - Run ruff linter and formatter check"
-	@echo "  format - Run ruff formatter"
-	@echo "  smoke  - Run smoke tests"
-	@echo "  test   - Run tests with pytest"
-	@echo "  cov    - Run tests with pytest and coverage"
-	@echo "  build  - Build binary with Nuitka"
-	@echo "  qr     - Generate QR codes for donation addresses"
-	@echo "  clean  - Remove build artifacts"
-	@echo "  all    - Run lint, test, and build"
+	@echo "  install - Install dependencies (DEV=1 for dev deps)"
+	@echo "  ci      - Install with frozen lock file (DEV=1 for dev deps)"
+	@echo "  lint    - Run ruff linter and formatter check"
+	@echo "  format  - Run ruff formatter"
+	@echo "  smoke   - Run smoke tests"
+	@echo "  test    - Run tests with pytest"
+	@echo "  cov     - Run tests with pytest and coverage"
+	@echo "  build   - Build binary with Nuitka"
+	@echo "  qr      - Generate QR codes for donation addresses"
+	@echo "  clean   - Remove build artifacts"
+	@echo "  all     - Run lint, test, and build"
+
+install:
+	$(UV_SYNC)
+
+ci:
+	$(UV_SYNC_FROZEN)
 
 lint:
 	uv run ruff check .

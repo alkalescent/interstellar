@@ -136,9 +136,7 @@ jobs:
       env:
         MODE: onefile
         CI: true
-      run: |
-        chmod +x scripts/build.sh
-        ./scripts/build.sh
+      run: make build
       shell: bash
     
     - name: Rename binary with platform suffix
@@ -189,9 +187,7 @@ jobs:
       env:
         MODE: standalone
         CI: true
-      run: |
-        chmod +x scripts/build.sh
-        ./scripts/build.sh
+      run: make build
       shell: bash
     
     - name: Create archive
@@ -291,7 +287,7 @@ jobs:
       uses: astral-sh/setup-uv@v7
     
     - name: Install package (for import tests)
-      run: uv sync
+      run: make install
     
     - name: Download binary
       uses: actions/download-artifact@v5
@@ -303,7 +299,7 @@ jobs:
       shell: bash
     
     - name: Run smoke tests
-      run: uv run python tests/smoke.py ./${{ github.event.repository.name }}-${{ matrix.artifact_suffix }}
+      run: make smoke NAME=./${{ github.event.repository.name }}-${{ matrix.artifact_suffix }}
 
   homebrew:
     name: Update Homebrew
