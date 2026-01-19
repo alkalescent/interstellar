@@ -44,7 +44,7 @@ cov:
 	uv run python -m pytest --cov --cov-report=term-missing --cov-fail-under=90
 
 build:
-	./scripts/build.sh
+	bash scripts/build.sh
 
 qr:
 	uv run python scripts/qr.py
