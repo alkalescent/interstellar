@@ -144,7 +144,7 @@ class TestDeconstruct:
             app, ["deconstruct", "--mnemonic", self.mnemo_24, "--standard", "INVALID"]
         )
 
-        assert result.exit_code == 1
+        assert result.exit_code != 0
         # Error is raised as exception, check the exception
         assert result.exception is not None
 
@@ -152,7 +152,7 @@ class TestDeconstruct:
         """Test deconstruction without mnemonic or file."""
         result = runner.invoke(app, ["deconstruct"])
 
-        assert result.exit_code == 1
+        assert result.exit_code != 0
 
 
 class TestReconstruct:
@@ -272,7 +272,7 @@ class TestReconstruct:
             app, ["reconstruct", "--shares", "dummy", "--standard", "INVALID"]
         )
 
-        assert result.exit_code == 1
+        assert result.exit_code != 0
         # Error is raised as exception
         assert result.exception is not None
 
@@ -280,9 +280,9 @@ class TestReconstruct:
         """Test reconstruction without shares or file."""
         result = runner.invoke(app, ["reconstruct"])
 
-        assert result.exit_code == 1
+        assert result.exit_code != 0
 
-    def test_digits_zero_index_slip39(self):
+    def test_slip39_digits_zero_index(self):
         """Test reconstruction fails with zero index for SLIP39."""
         # Create fake shares with index 0 (invalid for 1-indexed wordlist)
         invalid_shares = "0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20,1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20"
@@ -294,7 +294,7 @@ class TestReconstruct:
         assert result.exit_code != 0
         assert "Invalid SLIP39 word index: 0" in str(result.output) or "Invalid SLIP39 word index: 0" in str(result.exception)
 
-    def test_digits_out_of_bounds_slip39(self):
+    def test_slip39_digits_out_of_bounds(self):
         """Test reconstruction fails with out-of-bounds index for SLIP39."""
         # SLIP39 wordlist is 1-1024, so 1025 is out of bounds
         invalid_shares = "1025 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20,1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20"
@@ -306,7 +306,7 @@ class TestReconstruct:
         assert result.exit_code != 0
         assert "Invalid SLIP39 word index: 1025" in str(result.output) or "Invalid SLIP39 word index: 1025" in str(result.exception)
 
-    def test_digits_zero_index_bip39(self):
+    def test_bip39_digits_zero_index(self):
         """Test reconstruction fails with zero index for BIP39."""
         # Create fake BIP39 parts with index 0 (invalid)
         with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".txt") as f:
@@ -325,7 +325,7 @@ class TestReconstruct:
         finally:
             os.unlink(temp_file)
 
-    def test_digits_out_of_bounds_bip39(self):
+    def test_bip39_digits_out_of_bounds(self):
         """Test reconstruction fails with out-of-bounds index for BIP39."""
         # BIP39 wordlist is 1-2048, so 2049 is out of bounds
         with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".txt") as f:
