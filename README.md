@@ -13,7 +13,7 @@ A command-line tool for managing cryptocurrency mnemonics using BIP39 and SLIP39
 - **SLIP39 Support**: Create Shamir Secret Sharing (SLIP39) shares from mnemonics
 - **Flexible Splitting**: Deconstruct 24-word mnemonics into multiple 12-word parts
 - **Share Reconstruction**: Reconstruct mnemonics from SLIP39 shares with threshold requirements
-- **Digit Mode**: Convert mnemonics to/from numeric format for easier backup
+- **Digit Mode**: Convert mnemonics to/from numeric format for easier backup (1-indexed: BIP39 uses 1-2048, SLIP39 uses 1-1024)
 
 ## 💖 Support
 
@@ -338,6 +338,95 @@ interstellar reconstruct \
   --shares "share1,share2;share3,share4" \
   --standard SLIP39
 ```
+
+## 🔒 Cryptotag Odin 7 Backup Guide
+
+The [Cryptotag Odin 7](https://cryptotag.io/products/odin/) is a titanium hexagonal prism system designed for SLIP39 backups. This guide explains how to use interstellar with Odin 7 for secure 24-word BIP39 seed storage.
+
+### Overview
+
+A 24-word BIP39 seed is split into **2 wallet parts** (12 words each), and each part is converted to **3 SLIP39 shares** (20 words each). This creates **6 total shares** that fit perfectly on 6 Odin hexagons, with 1 test hexagon for verification.
+
+| Wallet Part | Shares | Hexagons |
+|-------------|--------|----------|
+| Wallet 1 (words 1-12) | Share 1, 2, 3 | Hexagons 1-3 |
+| Wallet 2 (words 13-24) | Share 1, 2, 3 | Hexagons 4-6 |
+| Test | For verification | Hexagon 7 |
+
+### Store: Creating Shares with --digits
+
+```bash
+# Generate SLIP39 shares in digit format for metal engraving
+interstellar deconstruct \
+  --mnemonic "your 24 word seed phrase here..." \
+  --required 2 \
+  --total 3 \
+  --digits
+```
+
+Output structure:
+```json
+{
+  "shares": [
+    ["wallet1_share1 (20 digits)", "wallet1_share2", "wallet1_share3"],
+    ["wallet2_share1 (20 digits)", "wallet2_share2", "wallet2_share3"]
+  ]
+}
+```
+
+### Hexagon Face Layout
+
+Each Odin hexagon has 6 faces. Here's how to engrave them:
+
+```
+┌───────────────────────────────────────────────────┐
+│                 FACE 1: METADATA                  │
+├─────────────────────────┬─────────────────────────┤
+│  Total:  3                             Share:  1  │
+│  Thresh: 2                             Wallet: 1  │
+└─────────────────────────┴─────────────────────────┘
+
+┌───────────────────────────────────────────────────┐
+│                 FACE 2: WORDS 1-4                 │
+├────────────┬────────────┬────────────┬────────────┤
+│                                                   │
+│  1: [----]    2: [----]    3: [----]    4: [----] │
+└────────────┴────────────┴────────────┴────────────┘
+
+┌───────────────────────────────────────────────────┐
+│                 FACE 3: WORDS 5-8                 │
+├────────────┬────────────┬────────────┬────────────┤
+│                                                   │
+│  5: [----]    6: [----]    7: [----]    8: [----] │
+└────────────┴────────────┴────────────┴────────────┘
+
+... (Faces 4-6 continue pattern through word 20)
+```
+
+### Restore: Reconstructing from Shares
+
+To recover your seed, you need **2 shares from each wallet part** (4 shares total).
+
+1. Create a file `shares.txt` with your digit shares (comma-separated within each wallet group, one group per line):
+
+```
+123 456 789 ... 20 digits, 234 567 890 ... 20 digits
+345 678 901 ... 20 digits, 456 789 012 ... 20 digits
+```
+
+Line 1 contains 2 shares from wallet 1, line 2 contains 2 shares from wallet 2.
+
+2. Reconstruct:
+
+```bash
+interstellar reconstruct --filename shares.txt --digits
+```
+
+### Security Notes
+
+- Store each hexagon in a **different physical location**
+- With 2-of-3 threshold, losing 1 hexagon per wallet part is recoverable
+- The test hexagon can verify your engraving is correct before distributing
 
 ## 📚 Dependencies
 

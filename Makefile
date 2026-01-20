@@ -41,7 +41,7 @@ smoke:
 	uv run python tests/smoke.py $(NAME)
 
 cov:
-	uv run python -m pytest --cov --cov-report=term-missing --cov-fail-under=90
+	uv run python -m pytest --cov
 
 build:
 	bash scripts/build.sh

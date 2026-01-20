@@ -44,10 +44,10 @@ class CLI:
             standard: The standard to validate.
 
         Raises:
-            ValueError: If standard is not 'BIP39' or 'SLIP39'.
+            typer.BadParameter: If standard is not 'BIP39' or 'SLIP39'.
         """
         if standard.upper() not in ["SLIP39", "BIP39"]:
-            raise ValueError("Standard must be either 'SLIP39' or 'BIP39'")
+            raise typer.BadParameter("Standard must be either 'SLIP39' or 'BIP39'")
 
     def parse_2D_list(self, value: str) -> list[list[str]]:
         """Parse a string representation of a 2D list.
@@ -69,6 +69,37 @@ class CLI:
 app = typer.Typer(context_settings={"help_option_names": ["-h", "--help"]})
 cli = CLI()
 version_help = "Show the installed version."
+
+
+def _convert_digits_to_words(digit_string: str, standard: str) -> str:
+    """Convert space-separated 1-indexed digits to words.
+
+    Args:
+        digit_string: Space-separated digit indices (1-indexed).
+        standard: Standard name for error messages ('BIP39' or 'SLIP39').
+
+    Returns:
+        Space-separated words.
+
+    Raises:
+        typer.BadParameter: If any index is out of valid range.
+    """
+    wordlist = cli.slip39.words if standard.upper() == "SLIP39" else cli.bip39.words
+    max_index = len(wordlist)
+    words = []
+    for idx in digit_string.split():
+        try:
+            idx_int = int(idx)
+        except ValueError:
+            raise typer.BadParameter(
+                f"Invalid {standard} digit: '{idx}'. Must be an integer."
+            ) from None
+        if not (1 <= idx_int <= max_index):
+            raise typer.BadParameter(
+                f"Invalid {standard} word index: {idx}. Must be 1-{max_index}."
+            )
+        words.append(wordlist[idx_int - 1])
+    return " ".join(words)
 
 
 @app.callback()
@@ -134,7 +165,7 @@ def deconstruct(
         except FileNotFoundError:
             raise typer.BadParameter(f"File not found: {filename}") from None
     if not mnemonic:
-        raise ValueError("Mnemonic is required")
+        raise typer.BadParameter("Mnemonic is required")
 
     # Auto-detect split based on mnemonic length
     word_count = len(mnemonic.split())
@@ -218,7 +249,7 @@ def reconstruct(
         except FileNotFoundError:
             raise typer.BadParameter(f"File not found: {filename}") from None
     if not shares:
-        raise ValueError("Shares are required")
+        raise typer.BadParameter("Shares are required")
 
     required = 0
 
@@ -227,10 +258,7 @@ def reconstruct(
         shares = []
         for gidx, group in enumerate(groups):
             if digits:
-                group = [
-                    " ".join(cli.slip39.words[int(idx) - 1] for idx in member.split())
-                    for member in group
-                ]
+                group = [_convert_digits_to_words(member, "SLIP39") for member in group]
 
             required = cli.slip39.get_required(group[gidx])
             shares.append(cli.slip39.reconstruct(group))
@@ -238,10 +266,7 @@ def reconstruct(
         shares = [part for group in shares for part in group]
         if digits:
             # Convert 1-indexed digits back to words
-            shares = [
-                " ".join(cli.bip39.words[int(idx) - 1] for idx in share.split())
-                for share in shares
-            ]
+            shares = [_convert_digits_to_words(share, "BIP39") for share in shares]
     reconstructed = cli.bip39.reconstruct(shares)
     output = {
         "standard": "BIP39",
