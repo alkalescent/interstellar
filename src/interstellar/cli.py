@@ -72,14 +72,13 @@ version_help = "Show the installed version."
 
 
 def _convert_digits_to_words(
-    digit_string: str, wordlist: list[str], max_index: int, standard: str
+    digit_string: str, wordlist: list[str], standard: str
 ) -> str:
     """Convert space-separated 1-indexed digits to words.
 
     Args:
         digit_string: Space-separated digit indices (1-indexed).
         wordlist: The wordlist to look up words from.
-        max_index: Maximum valid index (2048 for BIP39, 1024 for SLIP39).
         standard: Standard name for error messages ('BIP39' or 'SLIP39').
 
     Returns:
@@ -88,6 +87,7 @@ def _convert_digits_to_words(
     Raises:
         typer.BadParameter: If any index is out of valid range.
     """
+    max_index = len(wordlist)
     words = []
     for idx in digit_string.split():
         try:
@@ -261,7 +261,7 @@ def reconstruct(
         for gidx, group in enumerate(groups):
             if digits:
                 group = [
-                    _convert_digits_to_words(member, cli.slip39.words, 1024, "SLIP39")
+                    _convert_digits_to_words(member, cli.slip39.words, "SLIP39")
                     for member in group
                 ]
 
@@ -272,7 +272,7 @@ def reconstruct(
         if digits:
             # Convert 1-indexed digits back to words
             shares = [
-                _convert_digits_to_words(share, cli.bip39.words, 2048, "BIP39")
+                _convert_digits_to_words(share, cli.bip39.words, "BIP39")
                 for share in shares
             ]
     reconstructed = cli.bip39.reconstruct(shares)
