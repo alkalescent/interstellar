@@ -378,39 +378,12 @@ Output structure:
 
 Each Odin hexagon has 6 faces. Here's how to engrave them:
 
-#### Option A: Mermaid Diagram
-
-```mermaid
-flowchart TB
-    subgraph Face1["Face 1: Metadata"]
-        A1["Total: 3 | Share: 1"]
-        A2["Thresh: 2 | Wallet: 1"]
-    end
-    subgraph Face2["Face 2: Words 1-4"]
-        B["1: ___ | 2: ___ | 3: ___ | 4: ___"]
-    end
-    subgraph Face3["Face 3: Words 5-8"]
-        C["5: ___ | 6: ___ | 7: ___ | 8: ___"]
-    end
-    subgraph Face4["Face 4: Words 9-12"]
-        D["9: ___ | 10: ___ | 11: ___ | 12: ___"]
-    end
-    subgraph Face5["Face 5: Words 13-16"]
-        E["13: ___ | 14: ___ | 15: ___ | 16: ___"]
-    end
-    subgraph Face6["Face 6: Words 17-20"]
-        F["17: ___ | 18: ___ | 19: ___ | 20: ___"]
-    end
-    Face1 ~~~ Face2 ~~~ Face3 ~~~ Face4 ~~~ Face5 ~~~ Face6
-```
-
-#### Option B: ASCII Art
-
 ```
 ┌───────────────────────────────────────────────────┐
 │                 FACE 1: METADATA                  │
 ├─────────────────────────┬─────────────────────────┤
 │  Total: 3               │  Share: 1               │
+├─────────────────────────┼─────────────────────────┤
 │  Thresh: 2              │  Wallet: 1              │
 └─────────────────────────┴─────────────────────────┘
 
