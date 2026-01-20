@@ -227,10 +227,18 @@ def reconstruct(
         shares = []
         for gidx, group in enumerate(groups):
             if digits:
-                group = [
-                    " ".join(cli.slip39.words[int(idx) - 1] for idx in member.split())
-                    for member in group
-                ]
+                converted_group = []
+                for member in group:
+                    words = []
+                    for idx in member.split():
+                        idx_int = int(idx)
+                        if not (1 <= idx_int <= 1024):
+                            raise typer.BadParameter(
+                                f"Invalid SLIP39 word index: {idx}. Must be 1-1024."
+                            )
+                        words.append(cli.slip39.words[idx_int - 1])
+                    converted_group.append(" ".join(words))
+                group = converted_group
 
             required = cli.slip39.get_required(group[gidx])
             shares.append(cli.slip39.reconstruct(group))
@@ -238,10 +246,18 @@ def reconstruct(
         shares = [part for group in shares for part in group]
         if digits:
             # Convert 1-indexed digits back to words
-            shares = [
-                " ".join(cli.bip39.words[int(idx) - 1] for idx in share.split())
-                for share in shares
-            ]
+            converted_shares = []
+            for share in shares:
+                words = []
+                for idx in share.split():
+                    idx_int = int(idx)
+                    if not (1 <= idx_int <= 2048):
+                        raise typer.BadParameter(
+                            f"Invalid BIP39 word index: {idx}. Must be 1-2048."
+                        )
+                    words.append(cli.bip39.words[idx_int - 1])
+                converted_shares.append(" ".join(words))
+            shares = converted_shares
     reconstructed = cli.bip39.reconstruct(shares)
     output = {
         "standard": "BIP39",

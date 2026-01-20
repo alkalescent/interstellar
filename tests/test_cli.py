@@ -282,6 +282,68 @@ class TestReconstruct:
 
         assert result.exit_code == 1
 
+    def test_digits_zero_index_slip39(self):
+        """Test reconstruction fails with zero index for SLIP39."""
+        # Create fake shares with index 0 (invalid for 1-indexed wordlist)
+        invalid_shares = "0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20,1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20"
+
+        result = runner.invoke(
+            app, ["reconstruct", "--shares", invalid_shares, "--digits"]
+        )
+
+        assert result.exit_code != 0
+        assert "Invalid SLIP39 word index: 0" in str(result.output) or "Invalid SLIP39 word index: 0" in str(result.exception)
+
+    def test_digits_out_of_bounds_slip39(self):
+        """Test reconstruction fails with out-of-bounds index for SLIP39."""
+        # SLIP39 wordlist is 1-1024, so 1025 is out of bounds
+        invalid_shares = "1025 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20,1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20"
+
+        result = runner.invoke(
+            app, ["reconstruct", "--shares", invalid_shares, "--digits"]
+        )
+
+        assert result.exit_code != 0
+        assert "Invalid SLIP39 word index: 1025" in str(result.output) or "Invalid SLIP39 word index: 1025" in str(result.exception)
+
+    def test_digits_zero_index_bip39(self):
+        """Test reconstruction fails with zero index for BIP39."""
+        # Create fake BIP39 parts with index 0 (invalid)
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".txt") as f:
+            f.write("0 1 2 3 4 5 6 7 8 9 10 11\n")
+            f.write("1 2 3 4 5 6 7 8 9 10 11 12\n")
+            temp_file = f.name
+
+        try:
+            result = runner.invoke(
+                app,
+                ["reconstruct", "--filename", temp_file, "--standard", "BIP39", "--digits"],
+            )
+
+            assert result.exit_code != 0
+            assert "Invalid BIP39 word index: 0" in str(result.output) or "Invalid BIP39 word index: 0" in str(result.exception)
+        finally:
+            os.unlink(temp_file)
+
+    def test_digits_out_of_bounds_bip39(self):
+        """Test reconstruction fails with out-of-bounds index for BIP39."""
+        # BIP39 wordlist is 1-2048, so 2049 is out of bounds
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".txt") as f:
+            f.write("2049 1 2 3 4 5 6 7 8 9 10 11\n")
+            f.write("1 2 3 4 5 6 7 8 9 10 11 12\n")
+            temp_file = f.name
+
+        try:
+            result = runner.invoke(
+                app,
+                ["reconstruct", "--filename", temp_file, "--standard", "BIP39", "--digits"],
+            )
+
+            assert result.exit_code != 0
+            assert "Invalid BIP39 word index: 2049" in str(result.output) or "Invalid BIP39 word index: 2049" in str(result.exception)
+        finally:
+            os.unlink(temp_file)
+
 
 class TestRoundtrip:
     """Test full roundtrip: deconstruct -> reconstruct."""
