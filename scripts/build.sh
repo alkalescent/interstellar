@@ -17,6 +17,9 @@ uv run python -m nuitka \
   --mode="${MODE}" \
   --output-filename="${NAME}" \
   --include-data-files="$SITE_PACKAGES/shamir_mnemonic/wordlist.txt=./shamir_mnemonic/wordlist.txt" \
+  --include-data-dir="$SITE_PACKAGES/mnemonic/wordlist=./mnemonic/wordlist" \
+  --include-data-dir="$SITE_PACKAGES/hdwallet/mnemonics/bip39/wordlist=./hdwallet/mnemonics/bip39/wordlist" \
+  --include-data-dir="$SITE_PACKAGES/hdwallet/mnemonics/slip39/wordlist=./hdwallet/mnemonics/slip39/wordlist" \
   --remove-output \
   --assume-yes-for-downloads \
   src/${NAME}/cli.py
