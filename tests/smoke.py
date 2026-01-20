@@ -103,6 +103,54 @@ def test_imports() -> None:
     print(f"[+] imports: BIP39, SLIP39, __version__={pkg.__version__}")
 
 
+def test_roundtrip(cmd: list[str]) -> None:
+    """Test full roundtrip: BIP39 words -> SLIP39 digits -> BIP39 words."""
+    import json
+    import os
+    import tempfile
+
+    # Use a known test mnemonic (12 words for simplicity in smoke test)
+    test_mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"
+
+    # Deconstruct BIP39 to SLIP39 with digits
+    result = run(
+        [
+            *cmd,
+            "deconstruct",
+            "--mnemonic",
+            test_mnemonic,
+            "--required",
+            "2",
+            "--total",
+            "3",
+            "--digits",
+        ]
+    )
+    decon_output = json.loads(result.stdout)
+    assert decon_output["standard"] == "SLIP39", "deconstruct should output SLIP39"
+    assert decon_output["digits"] is True, "should be in digit mode"
+    assert len(decon_output["shares"]) == 1, "12-word mnemonic should have 1 group"
+    shares = decon_output["shares"][0]
+    assert len(shares) == 3, "should have 3 shares"
+
+    # Write 2 shares to temp file for reconstruction
+    with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".txt") as f:
+        f.write(f"{shares[0]},{shares[1]}\n")
+        temp_file = f.name
+
+    try:
+        # Reconstruct from SLIP39 digits
+        result = run([*cmd, "reconstruct", "--filename", temp_file, "--digits"])
+        recon_output = json.loads(result.stdout)
+        assert recon_output["standard"] == "BIP39", "reconstruct should output BIP39"
+        assert recon_output["mnemonic"] == test_mnemonic, (
+            "roundtrip should recover original mnemonic"
+        )
+        print("[+] roundtrip: BIP39 -> SLIP39 digits -> BIP39")
+    finally:
+        os.unlink(temp_file)
+
+
 def main() -> None:
     """Run smoke tests."""
     # Command can be passed as args (e.g., "./binary" or "package")
@@ -118,6 +166,7 @@ def main() -> None:
         # CLI tests with provided command
         test_version(cmd)
         test_help(cmd)
+        test_roundtrip(cmd)
         print("All smoke tests passed!")
     except (subprocess.CalledProcessError, AssertionError) as e:
         print("\nSmoke test failed!", file=sys.stderr)
