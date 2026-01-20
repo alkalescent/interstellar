@@ -71,9 +71,7 @@ cli = CLI()
 version_help = "Show the installed version."
 
 
-def _convert_digits_to_words(
-    digit_string: str, standard: str
-) -> str:
+def _convert_digits_to_words(digit_string: str, standard: str) -> str:
     """Convert space-separated 1-indexed digits to words.
 
     Args:
@@ -260,10 +258,7 @@ def reconstruct(
         shares = []
         for gidx, group in enumerate(groups):
             if digits:
-                group = [
-                    _convert_digits_to_words(member, "SLIP39")
-                    for member in group
-                ]
+                group = [_convert_digits_to_words(member, "SLIP39") for member in group]
 
             required = cli.slip39.get_required(group[gidx])
             shares.append(cli.slip39.reconstruct(group))
@@ -271,10 +266,7 @@ def reconstruct(
         shares = [part for group in shares for part in group]
         if digits:
             # Convert 1-indexed digits back to words
-            shares = [
-                _convert_digits_to_words(share, "BIP39")
-                for share in shares
-            ]
+            shares = [_convert_digits_to_words(share, "BIP39") for share in shares]
     reconstructed = cli.bip39.reconstruct(shares)
     output = {
         "standard": "BIP39",
