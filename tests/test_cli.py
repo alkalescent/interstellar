@@ -292,7 +292,9 @@ class TestReconstruct:
         )
 
         assert result.exit_code != 0
-        assert "Invalid SLIP39 word index: 0" in str(result.output) or "Invalid SLIP39 word index: 0" in str(result.exception)
+        assert "Invalid SLIP39 word index: 0" in str(
+            result.output
+        ) or "Invalid SLIP39 word index: 0" in str(result.exception)
 
     def test_slip39_digits_out_of_bounds(self):
         """Test reconstruction fails with out-of-bounds index for SLIP39."""
@@ -304,7 +306,9 @@ class TestReconstruct:
         )
 
         assert result.exit_code != 0
-        assert "Invalid SLIP39 word index: 1025" in str(result.output) or "Invalid SLIP39 word index: 1025" in str(result.exception)
+        assert "Invalid SLIP39 word index: 1025" in str(
+            result.output
+        ) or "Invalid SLIP39 word index: 1025" in str(result.exception)
 
     def test_bip39_digits_zero_index(self):
         """Test reconstruction fails with zero index for BIP39."""
@@ -317,11 +321,20 @@ class TestReconstruct:
         try:
             result = runner.invoke(
                 app,
-                ["reconstruct", "--filename", temp_file, "--standard", "BIP39", "--digits"],
+                [
+                    "reconstruct",
+                    "--filename",
+                    temp_file,
+                    "--standard",
+                    "BIP39",
+                    "--digits",
+                ],
             )
 
             assert result.exit_code != 0
-            assert "Invalid BIP39 word index: 0" in str(result.output) or "Invalid BIP39 word index: 0" in str(result.exception)
+            assert "Invalid BIP39 word index: 0" in str(
+                result.output
+            ) or "Invalid BIP39 word index: 0" in str(result.exception)
         finally:
             os.unlink(temp_file)
 
@@ -336,11 +349,20 @@ class TestReconstruct:
         try:
             result = runner.invoke(
                 app,
-                ["reconstruct", "--filename", temp_file, "--standard", "BIP39", "--digits"],
+                [
+                    "reconstruct",
+                    "--filename",
+                    temp_file,
+                    "--standard",
+                    "BIP39",
+                    "--digits",
+                ],
             )
 
             assert result.exit_code != 0
-            assert "Invalid BIP39 word index: 2049" in str(result.output) or "Invalid BIP39 word index: 2049" in str(result.exception)
+            assert "Invalid BIP39 word index: 2049" in str(
+                result.output
+            ) or "Invalid BIP39 word index: 2049" in str(result.exception)
         finally:
             os.unlink(temp_file)
 
