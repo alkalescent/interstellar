@@ -366,6 +366,46 @@ class TestReconstruct:
         finally:
             os.unlink(temp_file)
 
+    def test_slip39_digits_invalid_non_integer(self):
+        """Test reconstruction fails with non-integer string for SLIP39."""
+        invalid_shares = "1 2 3 abc 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20,1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20"
+
+        result = runner.invoke(
+            app, ["reconstruct", "--shares", invalid_shares, "--digits"]
+        )
+
+        assert result.exit_code != 0
+        assert "Invalid SLIP39 digit: 'abc'" in str(
+            result.output
+        ) or "Invalid SLIP39 digit: 'abc'" in str(result.exception)
+
+    def test_bip39_digits_invalid_non_integer(self):
+        """Test reconstruction fails with non-integer string for BIP39."""
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".txt") as f:
+            f.write("1 2 3 xyz 5 6 7 8 9 10 11 12\n")
+            f.write("1 2 3 4 5 6 7 8 9 10 11 12\n")
+            temp_file = f.name
+
+        try:
+            result = runner.invoke(
+                app,
+                [
+                    "reconstruct",
+                    "--filename",
+                    temp_file,
+                    "--standard",
+                    "BIP39",
+                    "--digits",
+                ],
+            )
+
+            assert result.exit_code != 0
+            assert "Invalid BIP39 digit: 'xyz'" in str(
+                result.output
+            ) or "Invalid BIP39 digit: 'xyz'" in str(result.exception)
+        finally:
+            os.unlink(temp_file)
+
 
 class TestRoundtrip:
     """Test full roundtrip: deconstruct -> reconstruct."""

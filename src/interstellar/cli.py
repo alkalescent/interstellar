@@ -90,7 +90,12 @@ def _convert_digits_to_words(
     """
     words = []
     for idx in digit_string.split():
-        idx_int = int(idx)
+        try:
+            idx_int = int(idx)
+        except ValueError:
+            raise typer.BadParameter(
+                f"Invalid {standard} digit: '{idx}'. Must be an integer."
+            ) from None
         if not (1 <= idx_int <= max_index):
             raise typer.BadParameter(
                 f"Invalid {standard} word index: {idx}. Must be 1-{max_index}."

@@ -407,13 +407,14 @@ Each Odin hexagon has 6 faces. Here's how to engrave them:
 
 To recover your seed, you need **2 shares from each wallet part** (4 shares total).
 
-1. Create a file with your shares (digits, comma-separated per wallet group):
+1. Create a file `shares.txt` with your digit shares (comma-separated within each wallet group, one group per line):
 
 ```
-# shares.txt
-123 456 789 ... (wallet1_share1), 234 567 890 ... (wallet1_share2)
-345 678 901 ... (wallet2_share1), 456 789 012 ... (wallet2_share2)
+123 456 789 ... 20 digits, 234 567 890 ... 20 digits
+345 678 901 ... 20 digits, 456 789 012 ... 20 digits
 ```
+
+Line 1 contains 2 shares from wallet 1, line 2 contains 2 shares from wallet 2.
 
 2. Reconstruct:
 
