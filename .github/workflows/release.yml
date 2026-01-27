@@ -358,8 +358,19 @@ jobs:
         git config user.email "github-actions[bot]@users.noreply.github.com"
         git config user.name "github-actions[bot]"
         git add "${NAME}.rb"
-        git commit -m "Update ${NAME} to ${TAG}" || echo "No changes to commit"
-        git push origin master
+        
+        if git diff --cached --quiet; then
+          echo "No changes to commit for ${NAME}.rb"
+        else
+          git commit -m "Update ${NAME} to ${TAG}"
+        fi
+        
+        # Only push if there are new commits compared to origin/master
+        if git log origin/master..HEAD --oneline | grep -q '.'; then
+          git push origin master
+        else
+          echo "No new commits to push"
+        fi
 
   smoke-homebrew:
     name: Smoke Homebrew
