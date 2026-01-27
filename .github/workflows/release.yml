@@ -330,8 +330,17 @@ jobs:
         # Build source lines for release (url + sha256 + head)
         SOURCE_LINE="url \"${TARBALL_URL}\"\n  sha256 \"${SHA256}\"\n  head \"https://github.com/${REPO}.git\", branch: \"master\""
         
+        # Configure git credentials for GitHub using GITHUB_TOKEN
+        git config --global credential.helper store
+        git credential approve <<EOF
+        protocol=https
+        host=github.com
+        username=x-access-token
+        password=${GITHUB_TOKEN}
+        EOF
+        
         # Clone homebrew-tap repo (preserves all existing formulas)
-        git clone https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository_owner }}/homebrew-tap.git tap-repo
+        git clone https://github.com/${{ github.repository_owner }}/homebrew-tap.git tap-repo
         cd tap-repo
         
         # Generate formula directly in repo root (no Formula subdirectory)
