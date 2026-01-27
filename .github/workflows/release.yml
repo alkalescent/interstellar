@@ -248,12 +248,28 @@ jobs:
     steps:
     - uses: actions/checkout@v5
     
+    - name: Wait for PyPI indexing
+      run: |
+        NAME="${{ github.event.repository.name }}"
+        VERSION="${{ needs.version.outputs.pypi_version }}"
+        MAX_ATTEMPTS=40
+        SLEEP_SECONDS=15
+        
+        echo "Waiting for ${NAME}==${VERSION} to be available on PyPI..."
+        for i in $(seq 1 $MAX_ATTEMPTS); do
+          if curl -sf "https://pypi.org/pypi/${NAME}/${VERSION}/json" > /dev/null 2>&1; then
+            echo "Package available after $((i * SLEEP_SECONDS)) seconds"
+            exit 0
+          fi
+          echo "Attempt $i/$MAX_ATTEMPTS: Package not yet available, waiting ${SLEEP_SECONDS}s..."
+          sleep $SLEEP_SECONDS
+        done
+        echo "Timed out waiting for package after $((MAX_ATTEMPTS * SLEEP_SECONDS)) seconds"
+        exit 1
+    
     - uses: actions/setup-python@v6
       with:
         python-version: '3.13'
-    
-    - name: Wait for PyPI indexing
-      run: sleep 180
     
     - name: Install from PyPI
       run: pip install ${{ github.event.repository.name }}==${{ needs.version.outputs.pypi_version }}
@@ -309,7 +325,9 @@ jobs:
     steps:
     - uses: actions/checkout@v5
     
-    - name: Generate formula from template
+    - name: Generate and push formula
+      env:
+        GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
       run: |
         NAME="${{ github.event.repository.name }}"
         TAG="${{ needs.version.outputs.tag_name }}"
@@ -328,31 +346,47 @@ jobs:
         # Build source lines for release (url + sha256 + head)
         SOURCE_LINE="url \"${TARBALL_URL}\"\n  sha256 \"${SHA256}\"\n  head \"https://github.com/${REPO}.git\", branch: \"master\""
         
-        # Generate formula from template into Formula directory
-        mkdir -p Formula
+        # Configure git credentials for GitHub using GITHUB_TOKEN
+        git config --global credential.helper store
+        git credential approve <<EOF
+        protocol=https
+        host=github.com
+        username=x-access-token
+        password=${GITHUB_TOKEN}
+        EOF
+        
+        # Clone homebrew-tap repo (preserves all existing formulas)
+        git clone https://github.com/${{ github.repository_owner }}/homebrew-tap.git tap-repo
+        cd tap-repo
+        
+        # Generate formula directly in repo root (no Formula subdirectory)
         sed -e "s|{{NAME}}|${NAME}|g" \
             -e "s|{{CLASS_NAME}}|${CLASS_NAME}|g" \
             -e "s|{{DESCRIPTION}}|${DESCRIPTION}|g" \
             -e "s|{{HOMEPAGE}}|https://github.com/${REPO}|g" \
             -e "s|{{SOURCE_LINE}}|${SOURCE_LINE}|g" \
-            .github/templates/formula.rb.template > "Formula/${NAME}.rb"
+            ../.github/templates/formula.rb.template > "${NAME}.rb"
         
         echo "Generated formula:"
-        cat "Formula/${NAME}.rb"
-    
-    - name: Push to homebrew-tap
-      uses: cpina/github-action-push-to-another-repository@v1
-      env:
-        API_TOKEN_GITHUB: ${{ secrets.HOMEBREW_TAP_TOKEN }}
-      with:
-        source-directory: 'Formula'
-        destination-github-username: '${{ github.repository_owner }}'
-        destination-repository-name: 'homebrew-tap'
-        target-directory: 'Formula'
-        target-branch: 'master'
-        user-email: 'github-actions[bot]@users.noreply.github.com'
-        user-name: 'github-actions[bot]'
-        commit-message: 'Update ${{ github.event.repository.name }} to ${{ needs.version.outputs.tag_name }}'
+        cat "${NAME}.rb"
+        
+        # Commit and push
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git config user.name "github-actions[bot]"
+        git add "${NAME}.rb"
+        
+        if git diff --cached --quiet; then
+          echo "No changes to commit for ${NAME}.rb"
+        else
+          git commit -m "Update ${NAME} to ${TAG}"
+        fi
+        
+        # Only push if there are new commits compared to origin/master
+        if git log origin/master..HEAD --oneline | grep -q '.'; then
+          git push origin master
+        else
+          echo "No new commits to push"
+        fi
 
   smoke-homebrew:
     name: Smoke Homebrew
