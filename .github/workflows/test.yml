@@ -28,8 +28,11 @@ jobs:
     - name: Install dependencies
       run: make ci DEV=1
     
-    - name: Lint with ruff
+    - name: Lint
       run: make lint
     
-    - name: Run tests with coverage
+    - name: Type check
+      run: make type
+    
+    - name: Test with coverage
       run: make cov

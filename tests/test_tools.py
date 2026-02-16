@@ -17,25 +17,25 @@ TEST_ITERATIONS = 5
 class TestBIP39:
     """Test BIP39 mnemonic generation and validation."""
 
-    def setup_method(self):
+    def setup_method(self) -> None:
         """Setup test fixtures."""
         self.bip39 = BIP39()
 
-    def test_gen_12_words(self):
+    def test_gen_12_words(self) -> None:
         """Test generating a 12-word mnemonic."""
         mnemo = self.bip39.generate(WORDS_12)
         words = mnemo.split()
         assert len(words) == WORDS_12
         assert self.bip39.mnemo.check(mnemo)
 
-    def test_gen_24_words(self):
+    def test_gen_24_words(self) -> None:
         """Test generating a 24-word mnemonic."""
         mnemo = self.bip39.generate(WORDS_24)
         words = mnemo.split()
         assert len(words) == WORDS_24
         assert self.bip39.mnemo.check(mnemo)
 
-    def test_24_word_roundtrip(self):
+    def test_24_word_roundtrip(self) -> None:
         """Test deconstructing and reconstructing a 24-word mnemonic."""
         mnemo = self.bip39.generate(WORDS_24)
         parts = self.bip39.deconstruct(mnemo, split=SPLIT_PARTS)
@@ -46,7 +46,7 @@ class TestBIP39:
         reconstructed = self.bip39.reconstruct(parts)
         assert reconstructed == mnemo
 
-    def test_entropy_validation(self):
+    def test_entropy_validation(self) -> None:
         """Test that 12-word mnemonic cannot be split into 2 parts (8-byte entropy is invalid)."""
         mnemo = self.bip39.generate(WORDS_12)
         # 12-word mnemonic has 16 bytes of entropy, splitting gives 8 bytes each
@@ -54,26 +54,26 @@ class TestBIP39:
         with pytest.raises(ValueError):
             self.bip39.deconstruct(mnemo, split=SPLIT_PARTS)
 
-    def test_invalid_mnemo(self):
+    def test_invalid_mnemo(self) -> None:
         """Test that invalid mnemonic raises error on deconstruct."""
         invalid_mnemo = "invalid mnemonic phrase here test fail bad"
         with pytest.raises(ValueError, match="Invalid BIP39 mnemo"):
             self.bip39.deconstruct(invalid_mnemo)
 
-    def test_wordlist(self):
+    def test_wordlist(self) -> None:
         """Test BIP39 wordlist has correct properties."""
         assert len(self.bip39.words) == BIP39_WORDLIST_SIZE
         assert self.bip39.words == sorted(self.bip39.words)
         assert len(self.bip39.map) == BIP39_WORDLIST_SIZE
 
-    def test_consistency(self):
+    def test_consistency(self) -> None:
         """Test that generate produces valid mnemonics consistently."""
         for _ in range(TEST_ITERATIONS):
             mnemo = self.bip39.generate(WORDS_24)
             assert self.bip39.mnemo.check(mnemo)
             assert len(mnemo.split()) == WORDS_24
 
-    def test_eth(self):
+    def test_eth(self) -> None:
         """Test Ethereum address derivation from mnemonic."""
         mnemo = self.bip39.generate(WORDS_12)
         address = self.bip39.eth(mnemo)
@@ -83,12 +83,12 @@ class TestBIP39:
 class TestSLIP39:
     """Test SLIP39 mnemonic generation and validation."""
 
-    def setup_method(self):
+    def setup_method(self) -> None:
         """Setup test fixtures."""
         self.slip39 = SLIP39()
         self.bip39 = BIP39()
 
-    def test_gen_20_words(self):
+    def test_gen_20_words(self) -> None:
         """Test generating a 20-word mnemonic."""
         mnemo = self.slip39.generate(WORDS_20)
         # Decode the mnemonic to check if it is valid.
@@ -97,7 +97,7 @@ class TestSLIP39:
         words = mnemo.split()
         assert len(words) == WORDS_20
 
-    def test_24_word_roundtrip(self):
+    def test_24_word_roundtrip(self) -> None:
         """Test deconstructing and reconstructing a 24-word mnemonic."""
         mnemo = self.bip39.generate(WORDS_24)
         shares = self.slip39.deconstruct(
@@ -110,7 +110,7 @@ class TestSLIP39:
         reconstructed = self.slip39.reconstruct(shares[:SHARES_REQUIRED])
         assert reconstructed == mnemo
 
-    def test_share_combos(self):
+    def test_share_combos(self) -> None:
         """Test reconstruction with different share combinations."""
         mnemo = self.bip39.generate(WORDS_24)
         shares = self.slip39.deconstruct(
@@ -122,7 +122,7 @@ class TestSLIP39:
         assert self.slip39.reconstruct(shares[1:]) == mnemo
         assert self.slip39.reconstruct([shares[0], shares[SHARES_REQUIRED]]) == mnemo
 
-    def test_wordlist(self):
+    def test_wordlist(self) -> None:
         """Test SLIP39 wordlist has correct properties."""
         assert len(self.slip39.words) == SLIP39_WORDLIST_SIZE
         assert self.slip39.words == sorted(self.slip39.words)
@@ -132,12 +132,12 @@ class TestSLIP39:
 class TestIntegration:
     """Integration tests for the complete workflow."""
 
-    def setup_method(self):
+    def setup_method(self) -> None:
         """Setup test fixtures."""
         self.bip39 = BIP39()
         self.slip39 = SLIP39()
 
-    def test_full_24_word_workflow(self):
+    def test_full_24_word_workflow(self) -> None:
         """Test the complete workflow from main function with 24-word mnemonic."""
         # Generate initial mnemonic
         mnemo = self.bip39.generate(WORDS_24)
@@ -173,7 +173,7 @@ class TestIntegration:
         )
         assert mnemo_reconstructed == mnemo
 
-    def test_12_word_direct(self):
+    def test_12_word_direct(self) -> None:
         """Test SLIP39 workflow with 12-word mnemonic (no BIP39 splitting)."""
         # Generate initial mnemonic
         mnemo = self.bip39.generate(WORDS_12)
@@ -188,7 +188,7 @@ class TestIntegration:
         mnemo_reconstructed = self.slip39.reconstruct(shares[:SHARES_REQUIRED])
         assert mnemo_reconstructed == mnemo
 
-    def test_bip39_iterations(self):
+    def test_bip39_iterations(self) -> None:
         """Test multiple iterations to ensure consistency."""
         for _ in range(TEST_ITERATIONS):
             mnemo = self.bip39.generate(WORDS_24)
@@ -196,7 +196,7 @@ class TestIntegration:
             reconstructed = self.bip39.reconstruct(parts)
             assert reconstructed == mnemo
 
-    def test_slip39_iterations(self):
+    def test_slip39_iterations(self) -> None:
         """Test SLIP39 multiple iterations to ensure consistency."""
         for _ in range(TEST_ITERATIONS):
             mnemo = self.bip39.generate(WORDS_24)

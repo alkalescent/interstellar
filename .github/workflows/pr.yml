@@ -87,7 +87,7 @@ jobs:
     - name: Install uv
       uses: astral-sh/setup-uv@v7
     
-    - name: Update version in pyproject.toml
+    - name: Calculate prerelease version
       id: set-version
       run: |
         # Get base version from tag action (e.g., v1.2.0-rc.0)
@@ -98,15 +98,15 @@ jobs:
         # Create unique prerelease version: {base}rc{pr_number}.dev{run_number}
         # e.g., 1.2.0rc42.dev7 for PR #42, run #7
         PYPI_VERSION="${BASE_VERSION}rc${{ github.event.pull_request.number }}.dev${{ github.run_number }}"
-        sed -i "s/^version = .*/version = \"$PYPI_VERSION\"/" pyproject.toml
         echo "Tag version: $NEW_TAG"
         echo "PyPI version: $PYPI_VERSION"
         echo "pypi_version=$PYPI_VERSION" >> $GITHUB_OUTPUT
-        grep "^version" pyproject.toml
       env:
         NEW_TAG: ${{ steps.version.outputs.new_tag }}
     
     - name: Build distributions
+      env:
+        SETUPTOOLS_SCM_PRETEND_VERSION: ${{ steps.set-version.outputs.pypi_version }}
       run: |
         uv build --sdist
         uv build --wheel
