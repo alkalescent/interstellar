@@ -243,31 +243,34 @@ def reconstruct(
 ) -> None:
     """Reconstruct a BIP39 mnemonic from SLIP39 shares or BIP39 parts."""
     cli.enforce_standard(standard)
-    if not shares and filename:
+    share_groups: list[list[str]] = list(shares) if shares else []  # type: ignore[arg-type]
+    if not share_groups and filename:
         try:
-            shares = cli.get_mnemos(filename)
+            share_groups = cli.get_mnemos(filename)
         except FileNotFoundError:
             raise typer.BadParameter(f"File not found: {filename}") from None
-    if not shares:
+    if not share_groups:
         raise typer.BadParameter("Shares are required")
 
     required = 0
+    reconstructed_parts: list[str] = []
 
     if standard.upper() == "SLIP39":
-        groups = shares
-        shares = []
-        for gidx, group in enumerate(groups):
+        for gidx, group in enumerate(share_groups):
             if digits:
                 group = [_convert_digits_to_words(member, "SLIP39") for member in group]
 
             required = cli.slip39.get_required(group[gidx])
-            shares.append(cli.slip39.reconstruct(group))
+            reconstructed_parts.append(cli.slip39.reconstruct(group))
     else:  # BIP39
-        shares = [part for group in shares for part in group]
+        reconstructed_parts = [part for group in share_groups for part in group]
         if digits:
             # Convert 1-indexed digits back to words
-            shares = [_convert_digits_to_words(share, "BIP39") for share in shares]
-    reconstructed = cli.bip39.reconstruct(shares)
+            reconstructed_parts = [
+                _convert_digits_to_words(share, "BIP39")
+                for share in reconstructed_parts
+            ]
+    reconstructed = cli.bip39.reconstruct(reconstructed_parts)
     output = {
         "standard": "BIP39",
         "mnemonic": reconstructed,

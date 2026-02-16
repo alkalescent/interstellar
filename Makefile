@@ -4,13 +4,14 @@ NAME := $(shell basename $(CURDIR))
 UV_SYNC := uv sync $(if $(DEV),--dev,--no-dev)
 UV_SYNC_FROZEN := uv sync --frozen $(if $(DEV),--dev,--no-dev)
 
-.PHONY: install ci lint format smoke test cov build clean qr help all
+.PHONY: install ci lint type format smoke test cov build clean qr help all
 
 help:
 	@echo "Available targets:"
 	@echo "  install - Install dependencies (DEV=1 for dev deps)"
 	@echo "  ci      - Install with frozen lock file (DEV=1 for dev deps)"
 	@echo "  lint    - Run ruff linter and formatter check"
+	@echo "  type    - Run type checker (ty)"
 	@echo "  format  - Run ruff formatter"
 	@echo "  smoke   - Run smoke tests"
 	@echo "  test    - Run tests with pytest"
@@ -29,6 +30,9 @@ ci:
 lint:
 	uv run ruff check .
 	uv run ruff format --check .
+
+type:
+	uv run ty check src tests
 
 format:
 	uv run ruff check . --fix

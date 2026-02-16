@@ -64,10 +64,10 @@ class BIP39:
             raise ValueError("Invalid BIP39 entropy split.")
         # Split the entropy into split parts
         size = len(entropy) // split
-        entropies = [entropy[i * size : (i + 1) * size] for i in range(split)]
+        entropies = [bytes(entropy[i * size : (i + 1) * size]) for i in range(split)]
         mnemos = [self.mnemo.to_mnemonic(ent) for ent in entropies]
         # Check if the mnemonics are valid
-        if not all(self.mnemo.check(mnemo) for mnemo in mnemos):
+        if not all(self.mnemo.check(m) for m in mnemos):
             raise ValueError("Invalid BIP39 mnemonics after deconstruction.")
         return mnemos
 
@@ -80,9 +80,12 @@ class BIP39:
         Returns:
             The derived Ethereum address.
         """
-        mnemo = BIP39Mnemonic(mnemo)
-        wallet = HDWallet(symbol=ETH, cryptocurrency=Ethereum).from_mnemonic(mnemo)
+        bip39_mnemo = BIP39Mnemonic(mnemo)
+        wallet = HDWallet(symbol=ETH, cryptocurrency=Ethereum).from_mnemonic(
+            bip39_mnemo
+        )
         addr = wallet.address()
+        assert addr is not None, "Failed to derive Ethereum address"
         return addr
 
     def generate(self, num_words: int) -> str:
@@ -94,8 +97,10 @@ class BIP39:
         Returns:
             A randomly generated BIP39 mnemonic phrase.
         """
-        mnemo = BIP39Mnemonic.from_words(num_words, BIP39_MNEMONIC_LANGUAGES.ENGLISH)
-        return mnemo
+        generated = BIP39Mnemonic.from_words(
+            num_words, BIP39_MNEMONIC_LANGUAGES.ENGLISH
+        )
+        return str(generated)
 
 
 class SLIP39:
@@ -119,10 +124,11 @@ class SLIP39:
         Returns:
             List of SLIP39 share mnemonics.
         """
-        _, shares = slip39.api.create(
+        result = slip39.api.create(
             "LEDGER", 1, {"KEYS": (required, total)}, mnemo, using_bip39=True
-        ).groups["KEYS"]
-        return shares
+        )
+        _, shares = result.groups["KEYS"]  # type: ignore[union-attr]
+        return list(shares)
 
     def reconstruct(self, shares: list[str]) -> str:
         """Reconstruct a BIP39 mnemonic from SLIP39 shares.
@@ -133,9 +139,13 @@ class SLIP39:
         Returns:
             The reconstructed BIP39 mnemonic.
         """
-        entropy = slip39.recovery.recover(shares, using_bip39=True, as_entropy=True)
-        mnemo = self.mnemo.to_mnemonic(entropy)
-        return mnemo
+        entropy = slip39.recovery.recover(
+            shares,  # type: ignore[arg-type]
+            using_bip39=True,
+            as_entropy=True,
+        )
+        reconstructed = self.mnemo.to_mnemonic(entropy)
+        return reconstructed
 
     def get_required(self, share: str) -> int:
         """Extract required threshold from a SLIP39 share.
@@ -158,9 +168,12 @@ class SLIP39:
         Returns:
             The derived Ethereum address.
         """
-        mnemo = SLIP39Mnemonic(mnemo)
-        wallet = HDWallet(symbol=ETH, cryptocurrency=Ethereum).from_mnemonic(mnemo)
+        slip39_mnemo = SLIP39Mnemonic(mnemo)
+        wallet = HDWallet(symbol=ETH, cryptocurrency=Ethereum).from_mnemonic(
+            slip39_mnemo
+        )
         addr = wallet.address()
+        assert addr is not None, "Failed to derive Ethereum address"
         return addr
 
     def generate(self, num_words: int) -> str:
@@ -172,5 +185,7 @@ class SLIP39:
         Returns:
             A randomly generated SLIP39 mnemonic phrase.
         """
-        mnemo = SLIP39Mnemonic.from_words(num_words, SLIP39_MNEMONIC_LANGUAGES.ENGLISH)
-        return mnemo
+        generated = SLIP39Mnemonic.from_words(
+            num_words, SLIP39_MNEMONIC_LANGUAGES.ENGLISH
+        )
+        return str(generated)

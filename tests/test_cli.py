@@ -1,6 +1,7 @@
 import json
 import os
 import tempfile
+from typing import Any
 
 from conftest import SPLIT_PARTS, WORDS_24, assert_eth_addr
 from packaging.version import parse as parse_version
@@ -12,7 +13,7 @@ from interstellar.tools import BIP39, SLIP39
 runner = CliRunner()
 
 
-def assert_success_with_json(result) -> dict:
+def assert_success_with_json(result: Any) -> dict[str, Any]:
     """Assert command succeeded and return parsed JSON output."""
     assert result.exit_code == 0
     return json.loads(result.stdout)
@@ -21,7 +22,7 @@ def assert_success_with_json(result) -> dict:
 class TestVersion:
     """Test the version CLI command."""
 
-    def test_version(self):
+    def test_version(self) -> None:
         """Test version command returns a valid version string."""
         result = runner.invoke(app, ["version"])
         assert result.exit_code == 0
@@ -36,12 +37,12 @@ class TestVersion:
 class TestDeconstruct:
     """Test the deconstruct CLI command."""
 
-    def setup_method(self):
+    def setup_method(self) -> None:
         """Setup test fixtures."""
         self.bip39 = BIP39()
         self.mnemo_24 = self.bip39.generate(WORDS_24)
 
-    def test_bip39_option(self):
+    def test_bip39_option(self) -> None:
         """Test BIP39 deconstruction from --mnemonic option."""
         result = runner.invoke(
             app, ["deconstruct", "--mnemonic", self.mnemo_24, "--standard", "BIP39"]
@@ -56,7 +57,7 @@ class TestDeconstruct:
         for item in output:
             assert_eth_addr(item.get("eth_addr"))
 
-    def test_slip39_default(self):
+    def test_slip39_default(self) -> None:
         """Test SLIP39 deconstruction with default 2-of-3."""
         result = runner.invoke(app, ["deconstruct", "--mnemonic", self.mnemo_24])
 
@@ -66,7 +67,7 @@ class TestDeconstruct:
         assert len(output["shares"]) == SPLIT_PARTS
         assert all(len(group) == 3 for group in output["shares"])
 
-    def test_slip39_3of5(self):
+    def test_slip39_3of5(self) -> None:
         """Test SLIP39 deconstruction with custom 3-of-5."""
         result = runner.invoke(
             app,
@@ -87,7 +88,7 @@ class TestDeconstruct:
         assert len(output["shares"]) == SPLIT_PARTS
         assert all(len(group) == 5 for group in output["shares"])
 
-    def test_slip39_5of7(self):
+    def test_slip39_5of7(self) -> None:
         """Test SLIP39 deconstruction with custom 5-of-7."""
         result = runner.invoke(
             app,
@@ -108,7 +109,7 @@ class TestDeconstruct:
         assert len(output["shares"]) == SPLIT_PARTS
         assert all(len(group) == 7 for group in output["shares"])
 
-    def test_from_file(self):
+    def test_from_file(self) -> None:
         """Test deconstruction from file."""
         with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".txt") as f:
             f.write(self.mnemo_24)
@@ -125,7 +126,7 @@ class TestDeconstruct:
         finally:
             os.unlink(temp_file)
 
-    def test_with_digits(self):
+    def test_with_digits(self) -> None:
         """Test deconstruction with digits output."""
         result = runner.invoke(
             app, ["deconstruct", "--mnemonic", self.mnemo_24, "--digits"]
@@ -138,7 +139,7 @@ class TestDeconstruct:
         first_share = output["shares"][0][0]
         assert all(word.isdigit() or word == " " for word in first_share)
 
-    def test_invalid_standard(self):
+    def test_invalid_standard(self) -> None:
         """Test deconstruction with invalid standard."""
         result = runner.invoke(
             app, ["deconstruct", "--mnemonic", self.mnemo_24, "--standard", "INVALID"]
@@ -148,7 +149,7 @@ class TestDeconstruct:
         # Error is raised as exception, check the exception
         assert result.exception is not None
 
-    def test_missing_mnemonic(self):
+    def test_missing_mnemonic(self) -> None:
         """Test deconstruction without mnemonic or file."""
         result = runner.invoke(app, ["deconstruct"])
 
@@ -158,13 +159,13 @@ class TestDeconstruct:
 class TestReconstruct:
     """Test the reconstruct CLI command."""
 
-    def setup_method(self):
+    def setup_method(self) -> None:
         """Setup test fixtures."""
         self.bip39 = BIP39()
         self.slip39 = SLIP39()
         self.mnemo_24 = self.bip39.generate(WORDS_24)
 
-    def test_slip39_file(self):
+    def test_slip39_file(self) -> None:
         """Test SLIP39 reconstruction from file."""
         # Create shares
         bip_parts = self.bip39.deconstruct(self.mnemo_24, SPLIT_PARTS)
@@ -190,7 +191,7 @@ class TestReconstruct:
         finally:
             os.unlink(temp_file)
 
-    def test_slip39_option(self):
+    def test_slip39_option(self) -> None:
         """Test SLIP39 reconstruction from --shares option."""
         bip_parts = self.bip39.deconstruct(self.mnemo_24, SPLIT_PARTS)
         shares_group1 = self.slip39.deconstruct(bip_parts[0], required=2, total=3)
@@ -206,7 +207,7 @@ class TestReconstruct:
         assert output["mnemonic"] == self.mnemo_24
         assert_eth_addr(output.get("eth_addr"))
 
-    def test_bip39_file(self):
+    def test_bip39_file(self) -> None:
         """Test BIP39 reconstruction from file."""
         # Use CLI to get properly formatted BIP39 output
         result = runner.invoke(
@@ -232,7 +233,7 @@ class TestReconstruct:
         finally:
             os.unlink(temp_file)
 
-    def test_with_digits(self):
+    def test_with_digits(self) -> None:
         """Test reconstruction with digits input."""
         bip_parts = self.bip39.deconstruct(self.mnemo_24, SPLIT_PARTS)
         shares_group1 = self.slip39.deconstruct(bip_parts[0], required=2, total=3)
@@ -266,7 +267,7 @@ class TestReconstruct:
         finally:
             os.unlink(temp_file)
 
-    def test_invalid_standard(self):
+    def test_invalid_standard(self) -> None:
         """Test reconstruction with invalid standard."""
         result = runner.invoke(
             app, ["reconstruct", "--shares", "dummy", "--standard", "INVALID"]
@@ -276,13 +277,13 @@ class TestReconstruct:
         # Error is raised as exception
         assert result.exception is not None
 
-    def test_missing_shares(self):
+    def test_missing_shares(self) -> None:
         """Test reconstruction without shares or file."""
         result = runner.invoke(app, ["reconstruct"])
 
         assert result.exit_code != 0
 
-    def test_slip39_digits_zero_index(self):
+    def test_slip39_digits_zero_index(self) -> None:
         """Test reconstruction fails with zero index for SLIP39."""
         # Create fake shares with index 0 (invalid for 1-indexed wordlist)
         invalid_shares = "0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20,1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20"
@@ -296,7 +297,7 @@ class TestReconstruct:
             result.output
         ) or "Invalid SLIP39 word index: 0" in str(result.exception)
 
-    def test_slip39_digits_out_of_bounds(self):
+    def test_slip39_digits_out_of_bounds(self) -> None:
         """Test reconstruction fails with out-of-bounds index for SLIP39."""
         # SLIP39 wordlist is 1-1024, so 1025 is out of bounds
         invalid_shares = "1025 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20,1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20"
@@ -310,7 +311,7 @@ class TestReconstruct:
             result.output
         ) or "Invalid SLIP39 word index: 1025" in str(result.exception)
 
-    def test_bip39_digits_zero_index(self):
+    def test_bip39_digits_zero_index(self) -> None:
         """Test reconstruction fails with zero index for BIP39."""
         # Create fake BIP39 parts with index 0 (invalid)
         with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".txt") as f:
@@ -338,7 +339,7 @@ class TestReconstruct:
         finally:
             os.unlink(temp_file)
 
-    def test_bip39_digits_out_of_bounds(self):
+    def test_bip39_digits_out_of_bounds(self) -> None:
         """Test reconstruction fails with out-of-bounds index for BIP39."""
         # BIP39 wordlist is 1-2048, so 2049 is out of bounds
         with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".txt") as f:
@@ -366,7 +367,7 @@ class TestReconstruct:
         finally:
             os.unlink(temp_file)
 
-    def test_slip39_digits_invalid_non_integer(self):
+    def test_slip39_digits_invalid_non_integer(self) -> None:
         """Test reconstruction fails with non-integer string for SLIP39."""
         invalid_shares = "1 2 3 abc 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20,1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20"
 
@@ -379,7 +380,7 @@ class TestReconstruct:
             result.output
         ) or "Invalid SLIP39 digit: 'abc'" in str(result.exception)
 
-    def test_bip39_digits_invalid_non_integer(self):
+    def test_bip39_digits_invalid_non_integer(self) -> None:
         """Test reconstruction fails with non-integer string for BIP39."""
         with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".txt") as f:
             f.write("1 2 3 xyz 5 6 7 8 9 10 11 12\n")
@@ -410,12 +411,12 @@ class TestReconstruct:
 class TestRoundtrip:
     """Test full roundtrip: deconstruct -> reconstruct."""
 
-    def setup_method(self):
+    def setup_method(self) -> None:
         """Setup test fixtures."""
         self.bip39 = BIP39()
         self.mnemo_24 = self.bip39.generate(WORDS_24)
 
-    def test_default_2of3(self):
+    def test_default_2of3(self) -> None:
         """Test full roundtrip with default 2-of-3 threshold."""
         # Deconstruct
         result = runner.invoke(app, ["deconstruct", "--mnemonic", self.mnemo_24])
@@ -439,7 +440,7 @@ class TestRoundtrip:
         assert_eth_addr(recon_output.get("eth_addr"))
         # Note: total cannot be reliably inferred from shares
 
-    def test_3of5(self):
+    def test_3of5(self) -> None:
         """Test full roundtrip with 3-of-5 threshold."""
         # Deconstruct
         result = runner.invoke(
@@ -474,7 +475,7 @@ class TestRoundtrip:
         assert_eth_addr(recon_output.get("eth_addr"))
         # Note: total cannot be reliably inferred from shares
 
-    def test_5of7(self):
+    def test_5of7(self) -> None:
         """Test full roundtrip with 5-of-7 threshold."""
         # Deconstruct
         result = runner.invoke(
@@ -512,7 +513,7 @@ class TestRoundtrip:
         assert_eth_addr(recon_output.get("eth_addr"))
         # Note: total cannot be reliably inferred from shares
 
-    def test_bip39_only(self):
+    def test_bip39_only(self) -> None:
         """Test BIP39-only roundtrip (no SLIP39)."""
         # Deconstruct to BIP39
         result = runner.invoke(
@@ -544,7 +545,7 @@ class TestRoundtrip:
         finally:
             os.unlink(temp_file)
 
-    def test_bip39_with_digits(self):
+    def test_bip39_with_digits(self) -> None:
         """Test BIP39-only roundtrip with digits mode."""
         # Deconstruct to BIP39 with digits
         result = runner.invoke(
@@ -598,7 +599,7 @@ class TestRoundtrip:
         finally:
             os.unlink(temp_file)
 
-    def test_with_digits(self):
+    def test_with_digits(self) -> None:
         """Test full roundtrip with digits mode."""
         # Deconstruct with digits
         result = runner.invoke(
@@ -631,7 +632,7 @@ class TestRoundtrip:
         finally:
             os.unlink(temp_file)
 
-    def test_file_based(self):
+    def test_file_based(self) -> None:
         """Test full roundtrip using files for both operations."""
         # Write mnemonic to file
         with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".txt") as f:
@@ -676,13 +677,13 @@ class TestRoundtrip:
 class TestAutoDetect:
     """Test automatic required/total detection from shares."""
 
-    def setup_method(self):
+    def setup_method(self) -> None:
         """Setup test fixtures."""
         self.bip39 = BIP39()
         self.slip39 = SLIP39()
         self.mnemo_24 = self.bip39.generate(WORDS_24)
 
-    def test_2of3(self):
+    def test_2of3(self) -> None:
         """Test auto-detection of 2-of-3 threshold."""
         bip_parts = self.bip39.deconstruct(self.mnemo_24, SPLIT_PARTS)
         shares_group1 = self.slip39.deconstruct(bip_parts[0], required=2, total=3)
@@ -698,7 +699,7 @@ class TestAutoDetect:
         assert_eth_addr(output.get("eth_addr"))
         # Note: total cannot be reliably inferred from shares
 
-    def test_3of5(self):
+    def test_3of5(self) -> None:
         """Test auto-detection of 3-of-5 threshold."""
         bip_parts = self.bip39.deconstruct(self.mnemo_24, SPLIT_PARTS)
         shares_group1 = self.slip39.deconstruct(bip_parts[0], required=3, total=5)
@@ -715,7 +716,7 @@ class TestAutoDetect:
         assert_eth_addr(output.get("eth_addr"))
         # Note: total cannot be reliably inferred from shares
 
-    def test_5of7(self):
+    def test_5of7(self) -> None:
         """Test auto-detection of 5-of-7 threshold."""
         bip_parts = self.bip39.deconstruct(self.mnemo_24, SPLIT_PARTS)
         shares_group1 = self.slip39.deconstruct(bip_parts[0], required=5, total=7)
@@ -731,7 +732,7 @@ class TestAutoDetect:
         assert_eth_addr(output.get("eth_addr"))
         # Note: total cannot be reliably inferred from shares
 
-    def test_with_digits(self):
+    def test_with_digits(self) -> None:
         """Test auto-detection works with digits mode."""
         bip_parts = self.bip39.deconstruct(self.mnemo_24, SPLIT_PARTS)
         shares_group1 = self.slip39.deconstruct(bip_parts[0], required=3, total=5)
