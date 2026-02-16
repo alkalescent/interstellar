@@ -64,8 +64,7 @@ class BIP39:
             raise ValueError("Invalid BIP39 entropy split.")
         # Split the entropy into split parts
         size = len(entropy) // split
-        entropies = [bytes(entropy[i * size: (i + 1) * size])
-                     for i in range(split)]
+        entropies = [bytes(entropy[i * size : (i + 1) * size]) for i in range(split)]
         mnemos = [self.mnemo.to_mnemonic(ent) for ent in entropies]
         # Check if the mnemonics are valid
         if not all(self.mnemo.check(m) for m in mnemos):
