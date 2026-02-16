@@ -243,7 +243,7 @@ def reconstruct(
 ) -> None:
     """Reconstruct a BIP39 mnemonic from SLIP39 shares or BIP39 parts."""
     cli.enforce_standard(standard)
-    share_groups: list[list[str]] = list(shares) if shares else []  # type: ignore[arg-type]
+    share_groups: list[list[str]] = shares or []  # type: ignore[assignment]
     if not share_groups and filename:
         try:
             share_groups = cli.get_mnemos(filename)
