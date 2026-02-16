@@ -45,7 +45,8 @@ class TestDeconstruct:
     def test_bip39_option(self) -> None:
         """Test BIP39 deconstruction from --mnemonic option."""
         result = runner.invoke(
-            app, ["deconstruct", "--mnemonic", self.mnemo_24, "--standard", "BIP39"]
+            app, ["deconstruct", "--mnemonic",
+                  self.mnemo_24, "--standard", "BIP39"]
         )
 
         assert result.exit_code == 0
@@ -59,7 +60,8 @@ class TestDeconstruct:
 
     def test_slip39_default(self) -> None:
         """Test SLIP39 deconstruction with default 2-of-3."""
-        result = runner.invoke(app, ["deconstruct", "--mnemonic", self.mnemo_24])
+        result = runner.invoke(
+            app, ["deconstruct", "--mnemonic", self.mnemo_24])
 
         assert result.exit_code == 0
         output = json.loads(result.stdout)
@@ -117,7 +119,8 @@ class TestDeconstruct:
 
         try:
             result = runner.invoke(
-                app, ["deconstruct", "--filename", temp_file, "--standard", "BIP39"]
+                app, ["deconstruct", "--filename",
+                      temp_file, "--standard", "BIP39"]
             )
 
             assert result.exit_code == 0
@@ -142,7 +145,8 @@ class TestDeconstruct:
     def test_invalid_standard(self) -> None:
         """Test deconstruction with invalid standard."""
         result = runner.invoke(
-            app, ["deconstruct", "--mnemonic", self.mnemo_24, "--standard", "INVALID"]
+            app, ["deconstruct", "--mnemonic",
+                  self.mnemo_24, "--standard", "INVALID"]
         )
 
         assert result.exit_code != 0
@@ -169,8 +173,10 @@ class TestReconstruct:
         """Test SLIP39 reconstruction from file."""
         # Create shares
         bip_parts = self.bip39.deconstruct(self.mnemo_24, SPLIT_PARTS)
-        shares_group1 = self.slip39.deconstruct(bip_parts[0], required=2, total=3)
-        shares_group2 = self.slip39.deconstruct(bip_parts[1], required=2, total=3)
+        shares_group1 = self.slip39.deconstruct(
+            bip_parts[0], required=2, total=3)
+        shares_group2 = self.slip39.deconstruct(
+            bip_parts[1], required=2, total=3)
 
         with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".txt") as f:
             f.write(f"{shares_group1[0]},{shares_group1[1]}\n")
@@ -178,7 +184,8 @@ class TestReconstruct:
             temp_file = f.name
 
         try:
-            result = runner.invoke(app, ["reconstruct", "--filename", temp_file])
+            result = runner.invoke(
+                app, ["reconstruct", "--filename", temp_file])
 
             assert result.exit_code == 0
             output = json.loads(result.stdout)
@@ -194,8 +201,10 @@ class TestReconstruct:
     def test_slip39_option(self) -> None:
         """Test SLIP39 reconstruction from --shares option."""
         bip_parts = self.bip39.deconstruct(self.mnemo_24, SPLIT_PARTS)
-        shares_group1 = self.slip39.deconstruct(bip_parts[0], required=2, total=3)
-        shares_group2 = self.slip39.deconstruct(bip_parts[1], required=2, total=3)
+        shares_group1 = self.slip39.deconstruct(
+            bip_parts[0], required=2, total=3)
+        shares_group2 = self.slip39.deconstruct(
+            bip_parts[1], required=2, total=3)
 
         shares_str = f"{shares_group1[0]},{shares_group1[1]};{shares_group2[0]},{shares_group2[1]}"
 
@@ -211,7 +220,8 @@ class TestReconstruct:
         """Test BIP39 reconstruction from file."""
         # Use CLI to get properly formatted BIP39 output
         result = runner.invoke(
-            app, ["deconstruct", "--mnemonic", self.mnemo_24, "--standard", "BIP39"]
+            app, ["deconstruct", "--mnemonic",
+                  self.mnemo_24, "--standard", "BIP39"]
         )
         decon_output = json.loads(result.stdout)
 
@@ -223,7 +233,8 @@ class TestReconstruct:
 
         try:
             result = runner.invoke(
-                app, ["reconstruct", "--filename", temp_file, "--standard", "BIP39"]
+                app, ["reconstruct", "--filename",
+                      temp_file, "--standard", "BIP39"]
             )
 
             assert result.exit_code == 0
@@ -236,8 +247,10 @@ class TestReconstruct:
     def test_with_digits(self) -> None:
         """Test reconstruction with digits input."""
         bip_parts = self.bip39.deconstruct(self.mnemo_24, SPLIT_PARTS)
-        shares_group1 = self.slip39.deconstruct(bip_parts[0], required=2, total=3)
-        shares_group2 = self.slip39.deconstruct(bip_parts[1], required=2, total=3)
+        shares_group1 = self.slip39.deconstruct(
+            bip_parts[0], required=2, total=3)
+        shares_group2 = self.slip39.deconstruct(
+            bip_parts[1], required=2, total=3)
 
         # Convert to digits
         digit_shares_g1 = [
@@ -419,7 +432,8 @@ class TestRoundtrip:
     def test_default_2of3(self) -> None:
         """Test full roundtrip with default 2-of-3 threshold."""
         # Deconstruct
-        result = runner.invoke(app, ["deconstruct", "--mnemonic", self.mnemo_24])
+        result = runner.invoke(
+            app, ["deconstruct", "--mnemonic", self.mnemo_24])
 
         assert result.exit_code == 0
         decon_output = json.loads(result.stdout)
@@ -517,7 +531,8 @@ class TestRoundtrip:
         """Test BIP39-only roundtrip (no SLIP39)."""
         # Deconstruct to BIP39
         result = runner.invoke(
-            app, ["deconstruct", "--mnemonic", self.mnemo_24, "--standard", "BIP39"]
+            app, ["deconstruct", "--mnemonic",
+                  self.mnemo_24, "--standard", "BIP39"]
         )
 
         assert result.exit_code == 0
@@ -534,7 +549,8 @@ class TestRoundtrip:
         try:
             # Reconstruct from BIP39
             result = runner.invoke(
-                app, ["reconstruct", "--filename", temp_file, "--standard", "BIP39"]
+                app, ["reconstruct", "--filename",
+                      temp_file, "--standard", "BIP39"]
             )
 
             assert result.exit_code == 0
@@ -612,8 +628,10 @@ class TestRoundtrip:
 
         # Create file with digit shares
         with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".txt") as f:
-            f.write(f"{decon_output['shares'][0][0]},{decon_output['shares'][0][1]}\n")
-            f.write(f"{decon_output['shares'][1][0]},{decon_output['shares'][1][1]}\n")
+            f.write(
+                f"{decon_output['shares'][0][0]},{decon_output['shares'][0][1]}\n")
+            f.write(
+                f"{decon_output['shares'][1][0]},{decon_output['shares'][1][1]}\n")
             temp_file = f.name
 
         try:
@@ -641,7 +659,8 @@ class TestRoundtrip:
 
         try:
             # Deconstruct from file
-            result = runner.invoke(app, ["deconstruct", "--filename", input_file])
+            result = runner.invoke(
+                app, ["deconstruct", "--filename", input_file])
 
             assert result.exit_code == 0
             decon_output = json.loads(result.stdout)
@@ -660,7 +679,8 @@ class TestRoundtrip:
 
             try:
                 # Reconstruct from file
-                result = runner.invoke(app, ["reconstruct", "--filename", shares_file])
+                result = runner.invoke(
+                    app, ["reconstruct", "--filename", shares_file])
 
                 assert result.exit_code == 0
                 recon_output = json.loads(result.stdout)
@@ -686,8 +706,10 @@ class TestAutoDetect:
     def test_2of3(self) -> None:
         """Test auto-detection of 2-of-3 threshold."""
         bip_parts = self.bip39.deconstruct(self.mnemo_24, SPLIT_PARTS)
-        shares_group1 = self.slip39.deconstruct(bip_parts[0], required=2, total=3)
-        shares_group2 = self.slip39.deconstruct(bip_parts[1], required=2, total=3)
+        shares_group1 = self.slip39.deconstruct(
+            bip_parts[0], required=2, total=3)
+        shares_group2 = self.slip39.deconstruct(
+            bip_parts[1], required=2, total=3)
 
         shares_str = f"{shares_group1[0]},{shares_group1[1]};{shares_group2[0]},{shares_group2[1]}"
 
@@ -702,8 +724,10 @@ class TestAutoDetect:
     def test_3of5(self) -> None:
         """Test auto-detection of 3-of-5 threshold."""
         bip_parts = self.bip39.deconstruct(self.mnemo_24, SPLIT_PARTS)
-        shares_group1 = self.slip39.deconstruct(bip_parts[0], required=3, total=5)
-        shares_group2 = self.slip39.deconstruct(bip_parts[1], required=3, total=5)
+        shares_group1 = self.slip39.deconstruct(
+            bip_parts[0], required=3, total=5)
+        shares_group2 = self.slip39.deconstruct(
+            bip_parts[1], required=3, total=5)
 
         shares_str = f"{shares_group1[0]},{shares_group1[1]},{shares_group1[2]};"
         shares_str += f"{shares_group2[0]},{shares_group2[1]},{shares_group2[2]}"
@@ -719,10 +743,13 @@ class TestAutoDetect:
     def test_5of7(self) -> None:
         """Test auto-detection of 5-of-7 threshold."""
         bip_parts = self.bip39.deconstruct(self.mnemo_24, SPLIT_PARTS)
-        shares_group1 = self.slip39.deconstruct(bip_parts[0], required=5, total=7)
-        shares_group2 = self.slip39.deconstruct(bip_parts[1], required=5, total=7)
+        shares_group1 = self.slip39.deconstruct(
+            bip_parts[0], required=5, total=7)
+        shares_group2 = self.slip39.deconstruct(
+            bip_parts[1], required=5, total=7)
 
-        shares_str = ",".join(shares_group1[:5]) + ";" + ",".join(shares_group2[:5])
+        shares_str = ",".join(
+            shares_group1[:5]) + ";" + ",".join(shares_group2[:5])
 
         result = runner.invoke(app, ["reconstruct", "--shares", shares_str])
 
@@ -735,8 +762,10 @@ class TestAutoDetect:
     def test_with_digits(self) -> None:
         """Test auto-detection works with digits mode."""
         bip_parts = self.bip39.deconstruct(self.mnemo_24, SPLIT_PARTS)
-        shares_group1 = self.slip39.deconstruct(bip_parts[0], required=3, total=5)
-        shares_group2 = self.slip39.deconstruct(bip_parts[1], required=3, total=5)
+        shares_group1 = self.slip39.deconstruct(
+            bip_parts[0], required=3, total=5)
+        shares_group2 = self.slip39.deconstruct(
+            bip_parts[1], required=3, total=5)
 
         # Convert to digits
         digit_shares_g1 = [

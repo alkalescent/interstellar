@@ -47,7 +47,8 @@ class CLI:
             typer.BadParameter: If standard is not 'BIP39' or 'SLIP39'.
         """
         if standard.upper() not in ["SLIP39", "BIP39"]:
-            raise typer.BadParameter("Standard must be either 'SLIP39' or 'BIP39'")
+            raise typer.BadParameter(
+                "Standard must be either 'SLIP39' or 'BIP39'")
 
     def parse_2D_list(self, value: str) -> list[list[str]]:
         """Parse a string representation of a 2D list.
@@ -124,13 +125,16 @@ def main(
 )
 def deconstruct(
     mnemonic: Annotated[
-        str, typer.Option("--mnemonic", "-m", help="BIP39 mnemonic to deconstruct")
+        str, typer.Option("--mnemonic", "-m",
+                          help="BIP39 mnemonic to deconstruct")
     ] = "",
     filename: Annotated[
-        str, typer.Option("--filename", "-f", help="File containing the BIP39 mnemonic")
+        str, typer.Option("--filename", "-f",
+                          help="File containing the BIP39 mnemonic")
     ] = "",
     standard: Annotated[
-        str, typer.Option("--standard", "-s", help="Output format: 'BIP39' or 'SLIP39'")
+        str, typer.Option("--standard", "-s",
+                          help="Output format: 'BIP39' or 'SLIP39'")
     ] = "SLIP39",
     required: Annotated[
         int,
@@ -197,7 +201,8 @@ def deconstruct(
             shares = cli.slip39.deconstruct(part, required, total)
             if digits:
                 shares = [
-                    " ".join(str(cli.slip39.map[word]) for word in share.split())
+                    " ".join(str(cli.slip39.map[word])
+                             for word in share.split())
                     for share in shares
                 ]
             total_shares.append(shares)
@@ -232,7 +237,8 @@ def reconstruct(
         ),
     ] = "",
     standard: Annotated[
-        str, typer.Option("--standard", "-s", help="Input format: 'BIP39' or 'SLIP39'")
+        str, typer.Option("--standard", "-s",
+                          help="Input format: 'BIP39' or 'SLIP39'")
     ] = "SLIP39",
     digits: Annotated[
         bool,
@@ -243,7 +249,8 @@ def reconstruct(
 ) -> None:
     """Reconstruct a BIP39 mnemonic from SLIP39 shares or BIP39 parts."""
     cli.enforce_standard(standard)
-    share_groups: list[list[str]] = list(shares) if shares else []  # type: ignore[arg-type]
+    share_groups: list[list[str]] = list(
+        shares) if shares else []  # type: ignore[arg-type]
     if not share_groups and filename:
         try:
             share_groups = cli.get_mnemos(filename)
@@ -258,12 +265,14 @@ def reconstruct(
     if standard.upper() == "SLIP39":
         for gidx, group in enumerate(share_groups):
             if digits:
-                group = [_convert_digits_to_words(member, "SLIP39") for member in group]
+                group = [_convert_digits_to_words(
+                    member, "SLIP39") for member in group]
 
             required = cli.slip39.get_required(group[gidx])
             reconstructed_parts.append(cli.slip39.reconstruct(group))
     else:  # BIP39
-        reconstructed_parts = [part for group in share_groups for part in group]
+        reconstructed_parts = [
+            part for group in share_groups for part in group]
         if digits:
             # Convert 1-indexed digits back to words
             reconstructed_parts = [
