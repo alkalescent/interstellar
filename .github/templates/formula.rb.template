@@ -20,6 +20,9 @@ class {{CLASS_NAME}} < Formula
     python3 = "python3.13"
     system python3, "-m", "venv", libexec
     
+    # Set version for setuptools_scm (GitHub tarballs lack .git metadata)
+    ENV["SETUPTOOLS_SCM_PRETEND_VERSION"] = "{{VERSION}}"
+    
     # Install the package and all dependencies
     system libexec/"bin/pip", "install", "--upgrade", "pip"
     system libexec/"bin/pip", "install", buildpath.to_s
