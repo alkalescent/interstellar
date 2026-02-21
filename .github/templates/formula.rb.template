@@ -14,19 +14,17 @@ class {{CLASS_NAME}} < Formula
   license "MIT"
 
   depends_on "python@3.13"
+  depends_on "uv" => :build
 
   def install
-    # Create venv with pip included (not --without-pip)
-    python3 = "python3.13"
-    system python3, "-m", "venv", libexec
-    
-    # Install the package and all dependencies
-    system libexec/"bin/pip", "install", "--upgrade", "pip", "setuptools", "wheel"
+    # Point uv's venv at Homebrew's libexec directory
+    ENV["UV_PROJECT_ENVIRONMENT"] = libexec.to_s
     # Set version for setuptools-scm since archive tarballs lack .git metadata
     # Skip for HEAD builds — they use git clone, so setuptools-scm reads tags directly
     ENV["SETUPTOOLS_SCM_PRETEND_VERSION"] = version.to_s unless build.head?
-    system libexec/"bin/pip", "install", buildpath.to_s
-    
+    # Install project + locked dependencies from uv.lock (no resolver runs)
+    system "uv", "sync", "--frozen", "--no-dev", "--python", "python3.13"
+
     # Create wrapper scripts in bin that use the venv
     bin.install_symlink Dir[libexec/"bin/{{NAME}}"]
   end
