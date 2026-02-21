@@ -17,13 +17,14 @@ class {{CLASS_NAME}} < Formula
   depends_on "uv" => :build
 
   def install
-    # Point uv's venv at Homebrew's libexec directory
+    # Point uv's venv at Homebrew's libexec directory and use a local cache
     ENV["UV_PROJECT_ENVIRONMENT"] = libexec.to_s
+    ENV["UV_CACHE_DIR"] = (buildpath/".uv_cache").to_s
     # Set version for setuptools-scm since archive tarballs lack .git metadata
     # Skip for HEAD builds — they use git clone, so setuptools-scm reads tags directly
     ENV["SETUPTOOLS_SCM_PRETEND_VERSION"] = version.to_s unless build.head?
     # Install project + locked dependencies from uv.lock (no resolver runs)
-    system "uv", "sync", "--frozen", "--no-dev", "--python", "python3.13"
+    system "uv", "sync", "--frozen", "--no-dev", "--no-editable", "--python", "python3.13"
 
     # Create wrapper scripts in bin that use the venv
     bin.install_symlink Dir[libexec/"bin/{{NAME}}"]
