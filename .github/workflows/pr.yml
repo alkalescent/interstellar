@@ -106,7 +106,7 @@ jobs:
     
     - name: Build distributions
       env:
-        SETUPTOOLS_SCM_PRETEND_VERSION: ${{ steps.set-version.outputs.pypi_version }}
+        SETUPTOOLS_SCM_PRETEND_VERSION_FOR_INTERSTELLAR: ${{ steps.set-version.outputs.pypi_version }}
       run: |
         uv build --sdist
         uv build --wheel

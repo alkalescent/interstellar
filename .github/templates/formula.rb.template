@@ -22,7 +22,7 @@ class {{CLASS_NAME}} < Formula
     ENV["UV_CACHE_DIR"] = (buildpath/".uv_cache").to_s
     # Set version for setuptools-scm since archive tarballs lack .git metadata
     # Skip for HEAD builds — they use git clone, so setuptools-scm reads tags directly
-    ENV["SETUPTOOLS_SCM_PRETEND_VERSION"] = version.to_s unless build.head?
+    ENV["SETUPTOOLS_SCM_PRETEND_VERSION_FOR_INTERSTELLAR"] = version.to_s unless build.head?
     # Install project + locked dependencies from uv.lock (no resolver runs)
     system "uv", "sync", "--frozen", "--no-dev", "--no-editable", "--python", "python3.13"
 
