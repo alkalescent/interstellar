@@ -63,15 +63,9 @@ jobs:
     steps:
     - uses: actions/checkout@v5
       with:
-        ref: master
+        ref: ${{ needs.version.outputs.tag_name }}
         fetch-depth: 0  # Full history needed for hatch-vcs
-    
-    - name: Pull latest and fetch tags
-      run: |
-        git pull origin master
-        git fetch --tags
-        echo "Latest tag: $(git describe --tags --abbrev=0)"
-    
+
     - name: Set up Python
       uses: actions/setup-python@v6
       with:
@@ -111,11 +105,9 @@ jobs:
     steps:
     - uses: actions/checkout@v5
       with:
-        ref: master
-    
-    - name: Pull latest changes
-      run: git pull origin master
-    
+        ref: ${{ needs.version.outputs.tag_name }}
+        fetch-depth: 0
+
     - name: Set up Python
       uses: actions/setup-python@v6
       with:
@@ -162,11 +154,9 @@ jobs:
     steps:
     - uses: actions/checkout@v5
       with:
-        ref: master
-    
-    - name: Pull latest changes
-      run: git pull origin master
-    
+        ref: ${{ needs.version.outputs.tag_name }}
+        fetch-depth: 0
+
     - name: Set up Python
       uses: actions/setup-python@v6
       with:
@@ -201,8 +191,8 @@ jobs:
     steps:
     - uses: actions/checkout@v5
       with:
-        ref: master
-    
+        ref: ${{ needs.version.outputs.tag_name }}
+
     - name: Download all artifacts
       uses: actions/download-artifact@v5
       with:
