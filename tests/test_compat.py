@@ -12,6 +12,18 @@ only prove it agrees with itself. These fixtures prove that shares a user
 created with a released version still recover, and still derive the same
 wallet, after the dependency swap. Do not regenerate them with the current
 implementation.
+
+The opposite direction, master recovering shares created by this code, was
+checked the same way and holds: all 3 pairs of a 2-of-3 set and all 10
+triples of a 3-of-5 set generated here recovered under master, deriving the
+same address. It is not a test in this file because it cannot run in CI,
+which is on 3.13 where master's dependencies do not install. Share values
+are random, so it could not be a frozen fixture either: SLIP-39 draws a
+15-bit identifier and fresh polynomial coefficients per split, and two
+splits of one secret share no words. What CI can assert instead is the
+contract that direction depends on, which
+test_shares_encode_bip39_entropy_as_the_master_secret and
+test_new_shares_match_master_encoding cover between them.
 """
 
 from __future__ import annotations
@@ -19,6 +31,8 @@ from __future__ import annotations
 import itertools
 
 import pytest
+from mnemonic import Mnemonic
+from shamir_mnemonic import combine_mnemonics
 from shamir_mnemonic.share import Share
 
 from interstellar.tools import BIP39, SLIP39
@@ -139,3 +153,24 @@ def test_new_shares_recover_under_master_encoding_rules() -> None:
     shares = slip.deconstruct(MNEMONIC, 2, 3)
     assert slip.reconstruct(shares[:2]) == MNEMONIC
     assert BIP39().eth(slip.reconstruct(shares[1:])) == ADDRESS
+
+
+def test_shares_encode_bip39_entropy_as_the_master_secret() -> None:
+    """Test what we split is the BIP39 entropy, decoded without our wrapper.
+
+    This is the invariant any other SLIP-39 implementation depends on, and
+    the one that would silently orphan wallets if changed. Splitting the
+    BIP39 *seed* instead, for example, would still produce valid shares that
+    any tool could combine, and every round-trip through this package would
+    still pass, but the recovered secret would no longer be the entropy that
+    reconstitutes the user's mnemonic.
+
+    Recovery goes through shamir_mnemonic directly rather than SLIP39, so a
+    change to both sides of our own wrapper cannot hide it. Master's
+    fixtures cover the same contract from the opposite direction; this
+    covers shares created now, which no frozen fixture can.
+    """
+    shares = SLIP39().deconstruct(MNEMONIC, 2, 3)
+    secret = combine_mnemonics(shares[:2])
+    assert secret == bytes(Mnemonic().to_entropy(MNEMONIC))
+    assert Mnemonic().to_mnemonic(secret) == MNEMONIC
