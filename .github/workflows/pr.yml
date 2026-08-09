@@ -198,9 +198,16 @@ jobs:
         MAX_ATTEMPTS=40
         SLEEP_SECONDS=15
         
+        # Poll the simple index, which is what pip resolves against. The JSON
+        # API is a separate service and can report a release minutes before
+        # the index serves it, so waiting on JSON lets the install below race
+        # ahead and fail with "No matching distribution found".
+        ESCAPED=$(printf '%s' "$VERSION" | sed 's/\./\\./g')
+
         echo "Waiting for ${NAME}==${VERSION} to be available on TestPyPI..."
         for i in $(seq 1 $MAX_ATTEMPTS); do
-          if curl -sf "https://test.pypi.org/pypi/${NAME}/${VERSION}/json" > /dev/null 2>&1; then
+          if curl -sf "https://test.pypi.org/simple/${NAME}/" \
+            | grep -qE -- "-${ESCAPED}(-|\.tar\.gz)"; then
             echo "Package available after $((i * SLEEP_SECONDS)) seconds"
             exit 0
           fi
