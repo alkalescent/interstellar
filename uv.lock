@@ -107,7 +107,7 @@ name = "interstellar"
 source = { editable = "." }
 dependencies = [
     { name = "mnemonic" },
-    { name = "shamir-mnemonic-slip39" },
+    { name = "shamir-mnemonic" },
     { name = "typer" },
 ]
 
@@ -127,7 +127,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "mnemonic", specifier = ">=0.21" },
-    { name = "shamir-mnemonic-slip39", specifier = ">=0.4.3" },
+    { name = "shamir-mnemonic", specifier = ">=0.3.0" },
     { name = "typer", specifier = ">=0.20.1" },
 ]
 
@@ -378,12 +378,12 @@ wheels = [
 ]
 
 [[package]]
-name = "shamir-mnemonic-slip39"
-version = "0.4.3"
+name = "shamir-mnemonic"
+version = "0.3.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/35/1c/2f87e19e75f0971286d6ef12a5731afec65251d492aa2c3505db4d939396/shamir_mnemonic_slip39-0.4.3.tar.gz", hash = "sha256:4d3fc60e8e62563630e59aa0c3e0529bef58dcdeb87e91ccdcf211485cb9835c", size = 29614, upload-time = "2025-09-26T16:00:43.914Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b2/fd/9f5b305b5280795209817efe6b0cd6017f4714e3f36d160b2d4dfcc78c02/shamir_mnemonic-0.3.0.tar.gz", hash = "sha256:bc04886a1ddfe2a64d8a3ec51abf0f664d98d5b557cc7e78a8ad2d10a1d87438", size = 21757, upload-time = "2024-05-16T10:08:51.37Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a9/1d/c946121596513a46c1c7bec8f4ae26c5b8dc18d920b58d2fe455b526550e/shamir_mnemonic_slip39-0.4.3-py3-none-any.whl", hash = "sha256:fe453225560188230cfd953447559f08a4cc2947dfe5254a98c8f0de1e87efc6", size = 30444, upload-time = "2025-09-26T16:00:42.289Z" },
+    { url = "https://files.pythonhosted.org/packages/1d/38/2124e565afe40993949dbc89da6c654a2c9a1b24dd80039812ef7cdbaef3/shamir_mnemonic-0.3.0-py3-none-any.whl", hash = "sha256:188c6b5bd00d5e756e12e2b186c3cb7c98ff7ff44df608d4c1d2077f6b6e730f", size = 23159, upload-time = "2024-05-16T10:08:49.154Z" },
 ]
 
 [[package]]
