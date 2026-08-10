@@ -1,6 +1,6 @@
 import pytest
 from conftest import SPLIT_PARTS, WORDS_24, assert_eth_addr
-from hdwallet.mnemonics import SLIP39Mnemonic
+from shamir_mnemonic.share import Share
 
 from interstellar.tools import BIP39, SLIP39
 
@@ -91,9 +91,9 @@ class TestSLIP39:
     def test_gen_20_words(self) -> None:
         """Test generating a 20-word mnemonic."""
         mnemo = self.slip39.generate(WORDS_20)
-        # Decode the mnemonic to check if it is valid.
+        # Parsing validates the share's checksum and structure.
         # Otherwise, it will raise an exception.
-        assert len(SLIP39Mnemonic.decode(mnemo)) == 32
+        assert Share.from_mnemonic(mnemo).member_threshold == 1
         words = mnemo.split()
         assert len(words) == WORDS_20
 

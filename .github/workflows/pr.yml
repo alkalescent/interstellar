@@ -191,34 +191,34 @@ jobs:
     steps:
     - uses: actions/checkout@v5
     
-    - name: Wait for TestPyPI indexing
-      run: |
-        NAME="${{ github.event.repository.name }}"
-        VERSION="${{ needs.version.outputs.pypi_version }}"
-        MAX_ATTEMPTS=40
-        SLEEP_SECONDS=15
-        
-        echo "Waiting for ${NAME}==${VERSION} to be available on TestPyPI..."
-        for i in $(seq 1 $MAX_ATTEMPTS); do
-          if curl -sf "https://test.pypi.org/pypi/${NAME}/${VERSION}/json" > /dev/null 2>&1; then
-            echo "Package available after $((i * SLEEP_SECONDS)) seconds"
-            exit 0
-          fi
-          echo "Attempt $i/$MAX_ATTEMPTS: Package not yet available, waiting ${SLEEP_SECONDS}s..."
-          sleep $SLEEP_SECONDS
-        done
-        echo "Timed out waiting for package after $((MAX_ATTEMPTS * SLEEP_SECONDS)) seconds"
-        exit 1
-    
     - uses: actions/setup-python@v6
       with:
         python-version: '3.13'
     
     - name: Install from TestPyPI
       run: |
-        pip install --index-url https://test.pypi.org/simple/ \
-          --extra-index-url https://pypi.org/simple/ \
-          ${{ github.event.repository.name }}==${{ needs.version.outputs.pypi_version }}
+        NAME="${{ github.event.repository.name }}"
+        VERSION="${{ needs.version.outputs.pypi_version }}"
+        MAX_ATTEMPTS=40
+        SLEEP_SECONDS=15
+
+        # Retry the install itself rather than polling an index first. The
+        # simple index is CDN-cached per edge, so a separate curl check can
+        # see the release while pip's request lands on a stale edge moments
+        # later and fails with "No matching distribution found". Retrying the
+        # real command makes the check and the action the same client.
+        for i in $(seq 1 $MAX_ATTEMPTS); do
+          if pip install --index-url https://test.pypi.org/simple/ \
+            --extra-index-url https://pypi.org/simple/ \
+            "${NAME}==${VERSION}"; then
+            echo "Installed ${NAME}==${VERSION} on attempt $i"
+            exit 0
+          fi
+          echo "Attempt $i/$MAX_ATTEMPTS: not installable yet, waiting ${SLEEP_SECONDS}s..."
+          sleep $SLEEP_SECONDS
+        done
+        echo "Timed out after $((MAX_ATTEMPTS * SLEEP_SECONDS)) seconds"
+        exit 1
     
     - name: Run smoke tests
       run: python tests/smoke.py ${{ github.event.repository.name }}

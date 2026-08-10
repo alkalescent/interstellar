@@ -22,7 +22,7 @@ classifiers = [
 ]
 dependencies = [
     "mnemonic>=0.21",
-    "slip39>=14.0.2",
+    "shamir-mnemonic>=0.3.0",
     "typer>=0.20.1",
 ]
 

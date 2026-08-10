@@ -1,16 +1,14 @@
-import slip39
-from hdwallet import HDWallet
-from hdwallet.cryptocurrencies import Ethereum
-from hdwallet.mnemonics import (
-    BIP39_MNEMONIC_LANGUAGES,
-    SLIP39_MNEMONIC_LANGUAGES,
-    BIP39Mnemonic,
-    SLIP39Mnemonic,
-)
-from hdwallet.symbols import ETH
+import secrets
+
 from mnemonic import Mnemonic
+from shamir_mnemonic import combine_mnemonics, generate_mnemonics
 from shamir_mnemonic.share import Share
 from shamir_mnemonic.wordlist import WORDLIST
+
+from interstellar.wallet import eth_address
+
+# SLIP-39 share length is fixed by the size of the secret it encodes.
+_WORDS_TO_SECRET_BYTES = {20: 16, 33: 32}
 
 
 class BIP39:
@@ -80,13 +78,7 @@ class BIP39:
         Returns:
             The derived Ethereum address.
         """
-        bip39_mnemo = BIP39Mnemonic(mnemo)
-        wallet = HDWallet(symbol=ETH, cryptocurrency=Ethereum).from_mnemonic(
-            bip39_mnemo
-        )
-        addr = wallet.address()
-        assert addr is not None, "Failed to derive Ethereum address"
-        return addr
+        return eth_address(mnemo)
 
     def generate(self, num_words: int) -> str:
         """Generate a random BIP39 mnemonic.
@@ -96,11 +88,15 @@ class BIP39:
 
         Returns:
             A randomly generated BIP39 mnemonic phrase.
+
+        Raises:
+            ValueError: If num_words is not a supported length.
         """
-        generated = BIP39Mnemonic.from_words(
-            num_words, BIP39_MNEMONIC_LANGUAGES.ENGLISH
-        )
-        return str(generated)
+        if num_words not in (12, 15, 18, 21, 24):
+            raise ValueError(f"Unsupported BIP39 word count: {num_words}")
+        # Each word carries 11 bits, of which one checksum bit per 32 entropy
+        # bits, leaving 32/3 bits of entropy per word.
+        return self.mnemo.generate(num_words * 32 // 3)
 
 
 class SLIP39:
@@ -108,13 +104,17 @@ class SLIP39:
 
     def __init__(self) -> None:
         """Initialize SLIP39 handler with wordlist and mapping."""
-        self.mnemo = slip39.recovery.Mnemonic()
+        self.mnemo = Mnemonic()
         self.words = WORDLIST
         assert len(self.words) == 1024 and self.words == sorted(self.words)
         self.map = {word: idx + 1 for idx, word in enumerate(self.words)}
 
     def deconstruct(self, mnemo: str, required: int = 2, total: int = 3) -> list[str]:
         """Deconstruct a BIP39 mnemonic into SLIP39 shares.
+
+        The shares encode the mnemonic's BIP39 entropy as the SLIP-39 master
+        secret, with no passphrase, so recovery returns the original entropy
+        and therefore the original mnemonic.
 
         Args:
             mnemo: The BIP39 mnemonic to split.
@@ -123,12 +123,15 @@ class SLIP39:
 
         Returns:
             List of SLIP39 share mnemonics.
+
+        Raises:
+            ValueError: If the mnemonic is invalid.
         """
-        result = slip39.api.create(
-            "LEDGER", 1, {"KEYS": (required, total)}, mnemo, using_bip39=True
-        )
-        _, shares = result.groups["KEYS"]  # type: ignore[union-attr]
-        return list(shares)
+        if not self.mnemo.check(mnemo):
+            raise ValueError("Invalid BIP39 mnemo.")
+        entropy = bytes(self.mnemo.to_entropy(mnemo))
+        groups = generate_mnemonics(1, [(required, total)], entropy)
+        return list(groups[0])
 
     def reconstruct(self, shares: list[str]) -> str:
         """Reconstruct a BIP39 mnemonic from SLIP39 shares.
@@ -139,13 +142,8 @@ class SLIP39:
         Returns:
             The reconstructed BIP39 mnemonic.
         """
-        entropy = slip39.recovery.recover(
-            shares,  # type: ignore[arg-type]
-            using_bip39=True,
-            as_entropy=True,
-        )
-        reconstructed = self.mnemo.to_mnemonic(entropy)
-        return reconstructed
+        entropy = combine_mnemonics(shares)
+        return self.mnemo.to_mnemonic(entropy)
 
     def get_required(self, share: str) -> int:
         """Extract required threshold from a SLIP39 share.
@@ -159,33 +157,19 @@ class SLIP39:
         share_obj = Share.from_mnemonic(share)
         return share_obj.member_threshold
 
-    def eth(self, mnemo: str) -> str:
-        """Derive Ethereum address from reconstructed mnemonic.
-
-        Args:
-            mnemo: The BIP39 mnemonic phrase.
-
-        Returns:
-            The derived Ethereum address.
-        """
-        slip39_mnemo = SLIP39Mnemonic(mnemo)
-        wallet = HDWallet(symbol=ETH, cryptocurrency=Ethereum).from_mnemonic(
-            slip39_mnemo
-        )
-        addr = wallet.address()
-        assert addr is not None, "Failed to derive Ethereum address"
-        return addr
-
     def generate(self, num_words: int) -> str:
         """Generate a random SLIP39 mnemonic.
 
         Args:
-            num_words: Number of words for the mnemonic.
+            num_words: Number of words (20 or 33).
 
         Returns:
             A randomly generated SLIP39 mnemonic phrase.
+
+        Raises:
+            ValueError: If num_words is not a supported length.
         """
-        generated = SLIP39Mnemonic.from_words(
-            num_words, SLIP39_MNEMONIC_LANGUAGES.ENGLISH
-        )
-        return str(generated)
+        if num_words not in _WORDS_TO_SECRET_BYTES:
+            raise ValueError(f"Unsupported SLIP39 word count: {num_words}")
+        secret = secrets.token_bytes(_WORDS_TO_SECRET_BYTES[num_words])
+        return generate_mnemonics(1, [(1, 1)], secret)[0][0]

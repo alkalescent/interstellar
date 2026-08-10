@@ -151,6 +151,25 @@ def test_roundtrip(cmd: list[str]) -> None:
         os.unlink(temp_file)
 
 
+def test_short_flags(cmd: list[str]) -> None:
+    """Test the -m short flag works.
+
+    Compiled binaries have a self-execution guard that intercepts a leading
+    -m as Python's module flag, so this fails only in the binary and only
+    for the short form. Long flags cover every other path in this file.
+    """
+    import json
+
+    test_mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"
+    result = run([*cmd, "deconstruct", "-m", test_mnemonic, "-s", "BIP39"])
+    output = json.loads(result.stdout)
+    assert output[0]["mnemonic"] == test_mnemonic, "-m should accept the mnemonic"
+    assert output[0]["eth_addr"] == "0x9858EfFD232B4033E47d90003D41EC34EcaEda94", (
+        "known BIP44 vector should derive its published address"
+    )
+    print("[+] short flags: -m, -s")
+
+
 def main() -> None:
     """Run smoke tests."""
     # Command can be passed as args (e.g., "./binary" or "package")
@@ -167,6 +186,7 @@ def main() -> None:
         test_version(cmd)
         test_help(cmd)
         test_roundtrip(cmd)
+        test_short_flags(cmd)
         print("All smoke tests passed!")
     except (subprocess.CalledProcessError, AssertionError) as e:
         print("\nSmoke test failed!", file=sys.stderr)
