@@ -380,6 +380,7 @@ jobs:
     - name: Tap and install formula
       run: |
         brew tap ${{ github.repository_owner }}/tap
+        brew trust ${{ github.repository_owner }}/tap
         brew install ${{ github.event.repository.name }}
     
     - name: Run formula test

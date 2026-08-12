@@ -53,6 +53,7 @@ Love this tool? Your support means the world! ❤️
 
 ```bash
 brew tap alkalescent/tap
+brew trust alkalescent/tap
 brew install interstellar
 ```
 
