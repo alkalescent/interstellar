@@ -1,0 +1,12 @@
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      # Moves the pinned action SHAs in .github/workflows
+      interval: "monthly"
+
+  - package-ecosystem: "uv"
+    directory: "/" # Location of pyproject.toml and uv.lock
+    schedule:
+      interval: "monthly"
