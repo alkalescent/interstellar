@@ -193,6 +193,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write  # Needed to create the release and upload its assets
+      id-token: write  # Needed to sign the build provenance attestation
+      attestations: write  # Needed to store the build provenance attestation
     
     steps:
     - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
@@ -208,7 +210,14 @@ jobs:
       run: |
         mkdir -p release-assets
         find artifacts -type f -exec cp {} release-assets/ \;
+        (cd release-assets && sha256sum -- * > SHA256SUMS)
         ls -lah release-assets/
+        cat release-assets/SHA256SUMS
+    
+    - name: Attest build provenance
+      uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+      with:
+        subject-checksums: release-assets/SHA256SUMS
     
     - name: Create Release
       uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
@@ -224,6 +233,8 @@ jobs:
           | **Fast** (`*-fast.tar.gz`) | Optimized for speed, extract and run | ~1 sec |
           
           Choose **Portable** for convenience, **Fast** for performance.
+          
+          Verify a download with `sha256sum -c SHA256SUMS --ignore-missing` or `gh attestation verify <file> -R ${{ github.repository }}`.
         generate_release_notes: true
         draft: false
         prerelease: ${{ contains(needs.version.outputs.new_version, 'alpha') || contains(needs.version.outputs.new_version, 'beta') || contains(needs.version.outputs.new_version, 'rc') }}
