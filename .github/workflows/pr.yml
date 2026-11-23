@@ -190,11 +190,23 @@ jobs:
     
     steps:
     - uses: actions/checkout@v5
-    
+      with:
+        persist-credentials: false
+
     - uses: actions/setup-python@v6
       with:
         python-version: '3.13'
-    
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v7
+
+    - name: Install dependencies from PyPI
+      run: |
+        # Dependencies come from PyPI, pinned by hash in uv.lock, so a project
+        # on TestPyPI under a dependency's name is never installed.
+        uv export --frozen --no-dev --no-emit-project -o "$RUNNER_TEMP/requirements.txt"
+        pip install --require-hashes -r "$RUNNER_TEMP/requirements.txt"
+
     - name: Install from TestPyPI
       run: |
         NAME="${{ github.event.repository.name }}"
@@ -206,13 +218,19 @@ jobs:
         # simple index is CDN-cached per edge, so a separate curl check can
         # see the release while pip's request lands on a stale edge moments
         # later and fails with "No matching distribution found". Retrying the
-        # real command makes the check and the action the same client.
+        # real command makes the check and the action the same client. Only
+        # that error is retried; any other install error fails at once.
         for i in $(seq 1 $MAX_ATTEMPTS); do
-          if pip install --index-url https://test.pypi.org/simple/ \
-            --extra-index-url https://pypi.org/simple/ \
-            "${NAME}==${VERSION}"; then
+          if OUTPUT=$(pip install --no-deps --index-url https://test.pypi.org/simple/ \
+            "${NAME}==${VERSION}" 2>&1); then
+            echo "$OUTPUT"
             echo "Installed ${NAME}==${VERSION} on attempt $i"
             exit 0
+          fi
+          echo "$OUTPUT"
+          if ! grep -qF "No matching distribution found" <<< "$OUTPUT"; then
+            echo "Install failed with an error other than a missing release"
+            exit 1
           fi
           echo "Attempt $i/$MAX_ATTEMPTS: not installable yet, waiting ${SLEEP_SECONDS}s..."
           sleep $SLEEP_SECONDS
