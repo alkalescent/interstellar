@@ -254,10 +254,21 @@ jobs:
     - uses: actions/checkout@v5
     
     - name: Create local tap and generate formula
+      env:
+        HEAD_REF: ${{ github.head_ref }}
       run: |
         NAME="${{ github.event.repository.name }}"
         REPO="${{ github.repository }}"
-        
+
+        # The branch name goes into a Ruby string and a sed replacement below,
+        # so accept only plain branch-name characters
+        case "$HEAD_REF" in
+          *[!A-Za-z0-9._/-]*)
+            echo "Branch name has characters the formula cannot hold: $HEAD_REF"
+            exit 1
+            ;;
+        esac
+
         # Create a local tap
         brew tap-new local/tap
         TAP_PATH="$(brew --repository)/Library/Taps/local/homebrew-tap/Formula"
@@ -270,7 +281,7 @@ jobs:
         CLASS_NAME=$(echo "$NAME" | sed 's/-/ /g' | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) tolower(substr($i,2))}1' | tr -d ' ')
         
         # Build source line for HEAD install (points to PR branch)
-        SOURCE_LINE="head \"https://github.com/${REPO}.git\", branch: \"${{ github.head_ref }}\""
+        SOURCE_LINE="head \"https://github.com/${REPO}.git\", branch: \"${HEAD_REF}\""
         
         # Generate formula from template into the tap
         sed -e "s|{{NAME}}|${NAME}|g" \
