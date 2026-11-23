@@ -765,3 +765,80 @@ class TestAutoDetect:
             # Note: total cannot be reliably inferred from shares
         finally:
             os.unlink(temp_file)
+
+
+class TestErrors:
+    """Test that errors name the problem without printing the input."""
+
+    def setup_method(self) -> None:
+        """Setup test fixtures."""
+        self.bip39 = BIP39()
+        self.slip39 = SLIP39()
+        self.mnemo_24 = self.bip39.generate(WORDS_24)
+
+    def test_tracebacks_hide_locals(self) -> None:
+        """Test unexpected errors print tracebacks without local variables."""
+        assert app.pretty_exceptions_show_locals is False
+
+    def test_invalid_thresholds(self) -> None:
+        """Test thresholds SLIP39 cannot split fail before splitting."""
+        for required, total in (("3", "2"), ("0", "3"), ("1", "3"), ("2", "17")):
+            result = runner.invoke(
+                app,
+                [
+                    "deconstruct",
+                    "--mnemonic",
+                    self.mnemo_24,
+                    "--required",
+                    required,
+                    "--total",
+                    total,
+                ],
+            )
+
+            assert result.exit_code == 2
+            assert "--required and --total must be" in result.output
+            assert self.mnemo_24 not in result.output
+
+    def test_invalid_mnemonic(self) -> None:
+        """Test a mnemonic with a bad checksum fails without echoing it."""
+        words = self.mnemo_24.split()
+        words[-1] = next(w for w in self.bip39.words if w != words[-1])
+        bad_mnemonic = " ".join(words)
+        assert not self.bip39.mnemo.check(bad_mnemonic)
+
+        result = runner.invoke(app, ["deconstruct", "--mnemonic", bad_mnemonic])
+
+        assert result.exit_code == 2
+        assert "Invalid BIP39 mnemonic" in result.output
+        assert bad_mnemonic not in result.output
+
+    def test_mistyped_share(self) -> None:
+        """Test a mistyped share word fails without printing the shares."""
+        bip_parts = self.bip39.deconstruct(self.mnemo_24, SPLIT_PARTS)
+        group1 = self.slip39.deconstruct(bip_parts[0], required=2, total=3)
+        group2 = self.slip39.deconstruct(bip_parts[1], required=2, total=3)
+        typo = group2[0].split()
+        typo[5] = "notaword"
+        shares_str = f"{group1[0]},{group1[1]};{' '.join(typo)},{group2[1]}"
+
+        result = runner.invoke(app, ["reconstruct", "--shares", shares_str])
+
+        assert result.exit_code == 2
+        assert "The shares in group 2 do not recover" in result.output
+        assert "notaword" not in result.output
+        assert group2[1] not in result.output
+
+    def test_invalid_bip39_parts(self) -> None:
+        """Test BIP39 parts that do not join fail without printing them."""
+        part = self.bip39.generate(12)
+        bad_part = part.rsplit(" ", 1)[0] + " notaword"
+
+        result = runner.invoke(
+            app,
+            ["reconstruct", "--shares", f"{part},{bad_part}", "--standard", "BIP39"],
+        )
+
+        assert result.exit_code == 2
+        assert "The parts do not form a BIP39 mnemonic" in result.output
+        assert part not in result.output

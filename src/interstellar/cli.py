@@ -6,6 +6,8 @@ from pathlib import Path
 from typing import Annotated
 
 import typer
+from shamir_mnemonic import MnemonicError
+from shamir_mnemonic.constants import MAX_SHARE_COUNT
 
 from interstellar.tools import BIP39, SLIP39
 
@@ -66,7 +68,12 @@ class CLI:
         return result
 
 
-app = typer.Typer(context_settings={"help_option_names": ["-h", "--help"]})
+# Typer's tracebacks print each frame's local variables by default, and
+# here those hold the mnemonic, its entropy, and the shares.
+app = typer.Typer(
+    pretty_exceptions_show_locals=False,
+    context_settings={"help_option_names": ["-h", "--help"]},
+)
 cli = CLI()
 version_help = "Show the installed version."
 
@@ -157,6 +164,13 @@ def deconstruct(
 ) -> None:
     """Split a BIP39 mnemonic into parts or SLIP39 shares."""
     cli.enforce_standard(standard)
+    if standard.upper() == "SLIP39" and not (
+        required == total == 1 or 2 <= required <= total <= MAX_SHARE_COUNT
+    ):
+        raise typer.BadParameter(
+            "--required and --total must be 1 of 1, or M of N with "
+            f"2 <= M <= N <= {MAX_SHARE_COUNT}"
+        )
     if not mnemonic and filename:
         try:
             mnemos = cli.get_mnemos(filename)
@@ -171,7 +185,10 @@ def deconstruct(
     word_count = len(mnemonic.split())
     split = 2 if word_count == 24 else 1
 
-    bip_parts = cli.bip39.deconstruct(mnemonic, split)
+    try:
+        bip_parts = cli.bip39.deconstruct(mnemonic, split)
+    except ValueError:
+        raise typer.BadParameter("Invalid BIP39 mnemonic") from None
     if standard.upper() == "BIP39":
         output = []
         for bip_part in bip_parts:
@@ -260,8 +277,14 @@ def reconstruct(
             if digits:
                 group = [_convert_digits_to_words(member, "SLIP39") for member in group]
 
-            required = cli.slip39.get_required(group[gidx])
-            reconstructed_parts.append(cli.slip39.reconstruct(group))
+            try:
+                required = cli.slip39.get_required(group[gidx])
+                reconstructed_parts.append(cli.slip39.reconstruct(group))
+            except MnemonicError:
+                raise typer.BadParameter(
+                    f"The shares in group {gidx + 1} do not recover a secret: "
+                    "check each word and the number of shares"
+                ) from None
     else:  # BIP39
         reconstructed_parts = [part for group in share_groups for part in group]
         if digits:
@@ -270,7 +293,13 @@ def reconstruct(
                 _convert_digits_to_words(share, "BIP39")
                 for share in reconstructed_parts
             ]
-    reconstructed = cli.bip39.reconstruct(reconstructed_parts)
+    try:
+        reconstructed = cli.bip39.reconstruct(reconstructed_parts)
+    except (ValueError, LookupError):
+        raise typer.BadParameter(
+            "The parts do not form a BIP39 mnemonic: "
+            "check each word and the number of parts"
+        ) from None
     output = {
         "standard": "BIP39",
         "mnemonic": reconstructed,
