@@ -139,6 +139,17 @@ class TestDeconstruct:
         first_share = output["shares"][0][0]
         assert all(word.isdigit() or word == " " for word in first_share)
 
+    def test_prompt(self) -> None:
+        """Test the mnemonic is read at a hidden prompt when no option gives it."""
+        result = runner.invoke(app, ["deconstruct"], input=f"{self.mnemo_24}\n")
+
+        assert result.exit_code == 0
+        assert "BIP39 mnemonic" in result.stderr
+        assert self.mnemo_24 not in result.output
+        output = json.loads(result.stdout)
+        assert output["standard"] == "SLIP39"
+        assert len(output["shares"]) == SPLIT_PARTS
+
     def test_invalid_standard(self) -> None:
         """Test deconstruction with invalid standard."""
         result = runner.invoke(
@@ -266,6 +277,21 @@ class TestReconstruct:
             assert_eth_addr(output.get("eth_addr"))
         finally:
             os.unlink(temp_file)
+
+    def test_prompt(self) -> None:
+        """Test the shares are read at a hidden prompt when no option gives them."""
+        bip_parts = self.bip39.deconstruct(self.mnemo_24, SPLIT_PARTS)
+        shares_group1 = self.slip39.deconstruct(bip_parts[0], required=2, total=3)
+        shares_group2 = self.slip39.deconstruct(bip_parts[1], required=2, total=3)
+        shares_str = f"{shares_group1[0]},{shares_group1[1]};{shares_group2[0]},{shares_group2[1]}"
+
+        result = runner.invoke(app, ["reconstruct"], input=f"{shares_str}\n")
+
+        assert result.exit_code == 0
+        assert "Shares" in result.stderr
+        assert shares_group1[0] not in result.output
+        output = json.loads(result.stdout)
+        assert output["mnemonic"] == self.mnemo_24
 
     def test_invalid_standard(self) -> None:
         """Test reconstruction with invalid standard."""

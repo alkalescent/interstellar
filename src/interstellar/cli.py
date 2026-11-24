@@ -131,7 +131,13 @@ def main(
 )
 def deconstruct(
     mnemonic: Annotated[
-        str, typer.Option("--mnemonic", "-m", help="BIP39 mnemonic to deconstruct")
+        str,
+        typer.Option(
+            "--mnemonic",
+            "-m",
+            help="BIP39 mnemonic to deconstruct, kept in shell history. Without "
+            "this or --filename, a prompt asks for it with hidden input",
+        ),
     ] = "",
     filename: Annotated[
         str, typer.Option("--filename", "-f", help="File containing the BIP39 mnemonic")
@@ -178,6 +184,8 @@ def deconstruct(
                 mnemonic = mnemos[0][0]
         except FileNotFoundError:
             raise typer.BadParameter(f"File not found: {filename}") from None
+    elif not mnemonic:
+        mnemonic = typer.prompt("BIP39 mnemonic", hide_input=True, err=True)
     if not mnemonic:
         raise typer.BadParameter("Mnemonic is required")
 
@@ -236,7 +244,8 @@ def reconstruct(
         typer.Option(
             "--shares",
             "-x",
-            help="SLIP39 shares to reconstruct",
+            help="SLIP39 shares to reconstruct, kept in shell history. Without "
+            "this or --filename, a prompt asks for them with hidden input",
             parser=cli.parse_2D_list,
         ),
     ] = "",
@@ -266,6 +275,14 @@ def reconstruct(
             share_groups = cli.get_mnemos(filename)
         except FileNotFoundError:
             raise typer.BadParameter(f"File not found: {filename}") from None
+    elif not share_groups:
+        share_groups = cli.parse_2D_list(
+            typer.prompt(
+                "Shares (commas between shares, semicolons between groups)",
+                hide_input=True,
+                err=True,
+            )
+        )
     if not share_groups:
         raise typer.BadParameter("Shares are required")
 
