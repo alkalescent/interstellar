@@ -91,6 +91,7 @@ class TestDeconstruct:
         assert output["standard"] == "SLIP39"
         assert len(output["shares"]) == SPLIT_PARTS
         assert all(len(group) == 3 for group in output["shares"])
+        assert output["eth_addr"] == self.bip39.eth(self.mnemo_24)
 
     def test_slip39_3of5(self) -> None:
         """Test SLIP39 deconstruction with custom 3-of-5."""
@@ -317,6 +318,61 @@ class TestReconstruct:
         assert shares_group1[0] not in result.output
         output = json.loads(result.stdout)
         assert output["mnemonic"] == self.mnemo_24
+
+    def test_address_match(self) -> None:
+        """Test --address passes when the shares recover the original mnemonic."""
+        bip_parts = self.bip39.deconstruct(self.mnemo_24, SPLIT_PARTS)
+        shares_group1 = self.slip39.deconstruct(bip_parts[0], required=2, total=3)
+        shares_group2 = self.slip39.deconstruct(bip_parts[1], required=2, total=3)
+        shares_str = f"{shares_group1[0]},{shares_group1[1]};{shares_group2[0]},{shares_group2[1]}"
+        address = self.bip39.eth(self.mnemo_24)
+
+        result = runner.invoke(
+            app, ["reconstruct", "--shares", shares_str, "--address", address.lower()]
+        )
+
+        assert result.exit_code == 0
+        output = json.loads(result.stdout)
+        assert output["mnemonic"] == self.mnemo_24
+        assert output["eth_addr"] == address
+
+    def test_address_mismatch_swapped_groups(self) -> None:
+        """Test --address fails when the groups are swapped."""
+        bip_parts = self.bip39.deconstruct(self.mnemo_24, SPLIT_PARTS)
+        shares_group1 = self.slip39.deconstruct(bip_parts[0], required=2, total=3)
+        shares_group2 = self.slip39.deconstruct(bip_parts[1], required=2, total=3)
+        swapped = f"{shares_group2[0]},{shares_group2[1]};{shares_group1[0]},{shares_group1[1]}"
+        address = self.bip39.eth(self.mnemo_24)
+
+        result = runner.invoke(
+            app, ["reconstruct", "--shares", swapped, "--address", address]
+        )
+
+        assert result.exit_code == 2
+        assert "does not derive --address" in result.output
+        wrong = self.bip39.reconstruct([bip_parts[1], bip_parts[0]])
+        assert wrong not in result.output
+
+    def test_address_mismatch_swapped_parts(self) -> None:
+        """Test --address fails when BIP39 parts are swapped."""
+        bip_parts = self.bip39.deconstruct(self.mnemo_24, SPLIT_PARTS)
+        address = self.bip39.eth(self.mnemo_24)
+
+        result = runner.invoke(
+            app,
+            [
+                "reconstruct",
+                "--shares",
+                f"{bip_parts[1]},{bip_parts[0]}",
+                "--standard",
+                "BIP39",
+                "--address",
+                address,
+            ],
+        )
+
+        assert result.exit_code == 2
+        assert "does not derive --address" in result.output
 
     def test_invalid_standard(self) -> None:
         """Test reconstruction with invalid standard."""

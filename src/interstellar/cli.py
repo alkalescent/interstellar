@@ -226,6 +226,8 @@ def deconstruct(
         output = {
             "standard": "SLIP39",
             "shares": total_shares,
+            # The full mnemonic's address, for reconstruct --address
+            "eth_addr": cli.bip39.eth(mnemonic),
             "split": split,
             "digits": digits,
         }
@@ -262,6 +264,16 @@ def reconstruct(
             "--digits", "-d", help="Input format: use digits instead of words"
         ),
     ] = False,
+    address: Annotated[
+        str,
+        typer.Option(
+            "--address",
+            "-a",
+            help="The eth_addr that deconstruct printed. Fails if the recovered "
+            "mnemonic derives a different address, as it does when groups or "
+            "parts are out of order",
+        ),
+    ] = "",
 ) -> None:
     """Reconstruct a BIP39 mnemonic from SLIP39 shares or BIP39 parts."""
     cli.enforce_standard(standard)
@@ -313,10 +325,17 @@ def reconstruct(
             "The parts do not form a BIP39 mnemonic: "
             "check each word and the number of parts"
         ) from None
+    # Swapped groups or parts still give a valid mnemonic, of another wallet
+    eth_addr = cli.bip39.eth(reconstructed)
+    if address and address.lower() != eth_addr.lower():
+        raise typer.BadParameter(
+            "The recovered mnemonic does not derive --address. "
+            "Check that the groups or parts are in their original order."
+        )
     output = {
         "standard": "BIP39",
         "mnemonic": reconstructed,
-        "eth_addr": cli.bip39.eth(reconstructed),
+        "eth_addr": eth_addr,
         "required": required,
         "digits": digits,
     }
