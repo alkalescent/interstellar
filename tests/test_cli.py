@@ -169,6 +169,20 @@ class TestDeconstruct:
         finally:
             os.unlink(temp_file)
 
+    def test_irregular_whitespace_and_case(self) -> None:
+        """Test a mnemonic with extra spaces and capitals is accepted."""
+        words = self.mnemo_24.split()
+        messy = "  " + "  ".join(words[:12]).upper() + "\t" + " ".join(words[12:]) + " "
+
+        result = runner.invoke(
+            app, ["deconstruct", "--mnemonic", messy, "--standard", "BIP39"]
+        )
+
+        assert result.exit_code == 0
+        output = json.loads(result.stdout)
+        parts = self.bip39.deconstruct(self.mnemo_24, SPLIT_PARTS)
+        assert [item["mnemonic"] for item in output] == parts
+
     def test_with_digits(self) -> None:
         """Test deconstruction with digits output."""
         result = runner.invoke(
@@ -306,6 +320,20 @@ class TestReconstruct:
             assert output["mnemonic"] == self.mnemo_24
         finally:
             os.unlink(temp_file)
+
+    def test_bip39_irregular_whitespace_and_case(self) -> None:
+        """Test BIP39 parts with extra spaces and capitals are accepted."""
+        parts = self.bip39.deconstruct(self.mnemo_24, SPLIT_PARTS)
+        messy = [" " + part.upper().replace(" ", "  ") for part in parts]
+
+        result = runner.invoke(
+            app,
+            ["reconstruct", "--shares", ",".join(messy), "--standard", "BIP39"],
+        )
+
+        assert result.exit_code == 0
+        output = json.loads(result.stdout)
+        assert output["mnemonic"] == self.mnemo_24
 
     def test_with_digits(self) -> None:
         """Test reconstruction with digits input."""

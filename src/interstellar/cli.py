@@ -36,6 +36,19 @@ class CLI:
                 if line.strip()
             ]
 
+    def normalize(self, mnemonic: str) -> str:
+        """Collapse whitespace and lowercase a mnemonic.
+
+        BIP39 validation splits on single spaces and matches lowercase words.
+
+        Args:
+            mnemonic: Mnemonic as typed or read from a file.
+
+        Returns:
+            The mnemonic's words in lowercase, separated by single spaces.
+        """
+        return " ".join(mnemonic.split()).lower()
+
     def enforce_standard(self, standard: str) -> None:
         """Validate that standard is either 'BIP39' or 'SLIP39'.
 
@@ -183,6 +196,7 @@ def deconstruct(
             raise typer.BadParameter(f"File not found: {filename}") from None
     elif not mnemonic:
         mnemonic = typer.prompt("BIP39 mnemonic", hide_input=True, err=True)
+    mnemonic = cli.normalize(mnemonic)
     if not mnemonic:
         raise typer.BadParameter("Mnemonic is required")
 
@@ -313,7 +327,9 @@ def reconstruct(
                     "check each word and the number of shares"
                 ) from None
     else:  # BIP39
-        reconstructed_parts = [part for group in share_groups for part in group]
+        reconstructed_parts = [
+            cli.normalize(part) for group in share_groups for part in group
+        ]
         if digits:
             # Convert 1-indexed digits back to words
             reconstructed_parts = [
