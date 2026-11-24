@@ -31,13 +31,13 @@ class BIP39:
             The reconstructed full BIP39 mnemonic.
 
         Raises:
-            ValueError: If the reconstructed mnemonic is invalid.
+            ValueError: If a part fails its checksum or word count, or the
+                parts join into an unsupported entropy length.
+            LookupError: If a part has a word outside the wordlist.
         """
         entropy = b"".join([self.mnemo.to_entropy(mnemo) for mnemo in mnemos])
-        mnemo = self.mnemo.to_mnemonic(entropy)
-        if not self.mnemo.check(mnemo):
-            raise ValueError("Invalid BIP39 mnemo after reconstruction.")
-        return mnemo
+        # to_mnemonic appends the checksum, so the result is always valid
+        return self.mnemo.to_mnemonic(entropy)
 
     def deconstruct(self, mnemo: str, split: int = 2) -> list[str]:
         """Deconstruct a mnemonic into its components.
@@ -63,11 +63,8 @@ class BIP39:
         # Split the entropy into split parts
         size = len(entropy) // split
         entropies = [bytes(entropy[i * size : (i + 1) * size]) for i in range(split)]
-        mnemos = [self.mnemo.to_mnemonic(ent) for ent in entropies]
-        # Check if the mnemonics are valid
-        if not all(self.mnemo.check(m) for m in mnemos):
-            raise ValueError("Invalid BIP39 mnemonics after deconstruction.")
-        return mnemos
+        # to_mnemonic appends each part's checksum, so every part is valid
+        return [self.mnemo.to_mnemonic(ent) for ent in entropies]
 
     def eth(self, mnemo: str) -> str:
         """Derive Ethereum address from BIP39 mnemonic.
