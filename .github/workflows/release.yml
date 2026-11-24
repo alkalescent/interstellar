@@ -312,7 +312,7 @@ jobs:
       uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
     
     - name: Install package (for import tests)
-      run: make install
+      run: make ci
     
     - name: Download binary
       uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
