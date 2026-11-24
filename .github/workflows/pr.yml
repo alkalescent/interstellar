@@ -246,6 +246,8 @@ jobs:
         exit 1
     
     - name: Run smoke tests
+      env:
+        EXPECTED_VERSION: v${{ needs.version.outputs.pypi_version }}
       run: python tests/smoke.py ${{ github.event.repository.name }}
 
   smoke-homebrew:

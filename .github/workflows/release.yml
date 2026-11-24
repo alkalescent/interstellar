@@ -282,11 +282,13 @@ jobs:
         exit 1
 
     - name: Run smoke tests
+      env:
+        EXPECTED_VERSION: ${{ needs.version.outputs.tag_name }}
       run: python tests/smoke.py ${{ github.event.repository.name }}
 
   smoke-binary:
     name: Smoke Binary (${{ matrix.os }})
-    needs: [build-portable, build-fast]
+    needs: [version, build-portable, build-fast]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -322,6 +324,8 @@ jobs:
       shell: bash
     
     - name: Run smoke tests
+      env:
+        EXPECTED_VERSION: ${{ needs.version.outputs.tag_name }}
       run: make smoke NAME=./${{ github.event.repository.name }}-${{ matrix.artifact_suffix }}
 
   homebrew:

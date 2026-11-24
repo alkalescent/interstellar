@@ -1,18 +1,11 @@
 """Package initialization with dynamic version and public API exports."""
 
-from importlib.metadata import PackageNotFoundError
-from importlib.metadata import version as get_version
-from pathlib import Path
-
-# Get package name dynamically from directory structure
-PACKAGE_NAME = Path(__file__).parent.name
+from interstellar.tools import BIP39, SLIP39
 
 try:
-    __version__ = get_version(PACKAGE_NAME)
-except PackageNotFoundError:
+    # Written by the hatch-vcs build hook, so Nuitka binaries compile it in
+    from interstellar._version import __version__
+except ImportError:  # Source tree that was never built or installed
     __version__ = "0.0.0"
 
-# Re-export public API
-from interstellar.tools import BIP39, SLIP39  # noqa: E402
-
-__all__ = ["BIP39", "SLIP39", "__version__", "PACKAGE_NAME"]
+__all__ = ["BIP39", "SLIP39", "__version__"]

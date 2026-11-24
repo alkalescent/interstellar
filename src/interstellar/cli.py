@@ -1,17 +1,13 @@
 import json
 import logging
-from importlib.metadata import PackageNotFoundError
-from importlib.metadata import version as get_version
-from pathlib import Path
 from typing import Annotated
 
 import typer
 from shamir_mnemonic import MnemonicError
 from shamir_mnemonic.constants import MAX_SHARE_COUNT
 
+from interstellar import __version__
 from interstellar.tools import BIP39, SLIP39
-
-PACKAGE_NAME = Path(__file__).parent.name
 
 logging.getLogger("slip39").setLevel(logging.ERROR)
 
@@ -331,11 +327,7 @@ def reconstruct(
 @app.command(help=version_help)
 def version() -> None:
     """Display the installed package version."""
-    prefix = "v"
-    try:
-        typer.echo(f"{prefix}{get_version(PACKAGE_NAME)}")
-    except PackageNotFoundError:
-        typer.echo(f"{prefix}0.0.0")
+    typer.echo(f"v{__version__}")
     # Exit is needed for the --version flag callback to terminate execution.
     raise typer.Exit(code=0)
 

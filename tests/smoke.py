@@ -26,6 +26,7 @@ Alternative approach:
 """
 
 import importlib
+import os
 import subprocess
 import sys
 import tomllib
@@ -58,6 +59,10 @@ def test_version(cmd: list[str]) -> None:
     version = result.stdout.strip()
     assert version, "version output empty"
     assert version.startswith("v"), "version should start with 'v'"
+    # CI sets EXPECTED_VERSION to the version it built, for example the tag
+    expected = os.environ.get("EXPECTED_VERSION")
+    if expected:
+        assert version == expected, f"version {version} != expected {expected}"
     print(f"[+] version: {version}")
 
 
