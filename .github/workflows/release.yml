@@ -340,12 +340,19 @@ jobs:
         TAG="${{ needs.version.outputs.tag_name }}"
         REPO="${{ github.repository }}"
         
-        # Get description from pyproject.toml
+        # Get description from pyproject.toml. A double quote would end the
+        # formula's Ruby string, and sed reads \, &, and | in the replacement
+        # below, so reject the first and escape the rest.
         DESCRIPTION=$(grep '^description' pyproject.toml | sed 's/description = "\(.*\)"/\1/')
+        case "$DESCRIPTION" in
+          *'"'*) echo "The description in pyproject.toml must not contain a double quote"; exit 1 ;;
+        esac
+        DESCRIPTION=$(printf '%s' "$DESCRIPTION" | sed -e 's/[\\&|]/\\&/g')
         
-        # Calculate SHA256 of release tarball
+        # Calculate SHA256 of release tarball (curl -f fails the step on an HTTP error)
         TARBALL_URL="https://github.com/${REPO}/archive/refs/tags/${TAG}.tar.gz"
-        SHA256=$(curl -sL "$TARBALL_URL" | shasum -a 256 | cut -d' ' -f1)
+        curl -fsSL -o "$RUNNER_TEMP/source.tar.gz" "$TARBALL_URL"
+        SHA256=$(shasum -a 256 "$RUNNER_TEMP/source.tar.gz" | cut -d' ' -f1)
         
         # Convert name to Ruby class name (capitalize, remove hyphens)
         CLASS_NAME=$(echo "$NAME" | sed 's/-/ /g' | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) tolower(substr($i,2))}1' | tr -d ' ')
