@@ -27,12 +27,13 @@ class CLI:
             filename: Path to file containing mnemonics.
 
         Returns:
-            2D list of mnemonic parts, one row per line.
+            2D list of mnemonic parts, one row per line, skipping blank lines.
         """
         with open(filename) as f:
             return [
                 [subline.strip() for subline in line.strip().split(",")]
                 for line in f.readlines()
+                if line.strip()
             ]
 
     def enforce_standard(self, standard: str) -> None:

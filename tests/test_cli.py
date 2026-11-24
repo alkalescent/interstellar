@@ -152,6 +152,23 @@ class TestDeconstruct:
         finally:
             os.unlink(temp_file)
 
+    def test_from_file_blank_first_line(self) -> None:
+        """Test deconstruction from a file that starts with a blank line."""
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".txt") as f:
+            f.write(f"\n{self.mnemo_24}\n")
+            temp_file = f.name
+
+        try:
+            result = runner.invoke(
+                app, ["deconstruct", "--filename", temp_file, "--standard", "BIP39"]
+            )
+
+            assert result.exit_code == 0
+            output = json.loads(result.stdout)
+            assert len(output) == SPLIT_PARTS
+        finally:
+            os.unlink(temp_file)
+
     def test_with_digits(self) -> None:
         """Test deconstruction with digits output."""
         result = runner.invoke(
@@ -225,6 +242,26 @@ class TestReconstruct:
             assert_eth_addr(output.get("eth_addr"))
             # Note: total cannot be reliably inferred from shares (not encoded in SLIP39)
             # It returns group_count which is 1 in our scheme
+        finally:
+            os.unlink(temp_file)
+
+    def test_slip39_file_blank_lines(self) -> None:
+        """Test SLIP39 reconstruction from a file with blank lines."""
+        bip_parts = self.bip39.deconstruct(self.mnemo_24, SPLIT_PARTS)
+        shares_group1 = self.slip39.deconstruct(bip_parts[0], required=2, total=3)
+        shares_group2 = self.slip39.deconstruct(bip_parts[1], required=2, total=3)
+
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".txt") as f:
+            f.write(f"\n{shares_group1[0]},{shares_group1[1]}\n\n")
+            f.write(f"{shares_group2[0]},{shares_group2[1]}\n  \n")
+            temp_file = f.name
+
+        try:
+            result = runner.invoke(app, ["reconstruct", "--filename", temp_file])
+
+            assert result.exit_code == 0
+            output = json.loads(result.stdout)
+            assert output["mnemonic"] == self.mnemo_24
         finally:
             os.unlink(temp_file)
 
