@@ -1,5 +1,4 @@
 import json
-import logging
 from typing import Annotated
 
 import typer
@@ -8,8 +7,6 @@ from shamir_mnemonic.constants import MAX_SHARE_COUNT
 
 from interstellar import __version__
 from interstellar.tools import BIP39, SLIP39
-
-logging.getLogger("slip39").setLevel(logging.ERROR)
 
 
 class CLI:
