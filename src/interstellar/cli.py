@@ -303,7 +303,7 @@ def reconstruct(
                 group = [_convert_digits_to_words(member, "SLIP39") for member in group]
 
             try:
-                required = cli.slip39.get_required(group[gidx])
+                required = cli.slip39.get_required(group[0])
                 reconstructed_parts.append(cli.slip39.reconstruct(group))
             except MnemonicError:
                 raise typer.BadParameter(

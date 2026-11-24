@@ -620,6 +620,33 @@ class TestRoundtrip:
         assert_eth_addr(recon_output.get("eth_addr"))
         # Note: total cannot be reliably inferred from shares
 
+    def test_1of1(self) -> None:
+        """Test full roundtrip with 1-of-1, one share per group."""
+        result = runner.invoke(
+            app,
+            [
+                "deconstruct",
+                "--mnemonic",
+                self.mnemo_24,
+                "--required",
+                "1",
+                "--total",
+                "1",
+            ],
+        )
+
+        assert result.exit_code == 0
+        decon_output = json.loads(result.stdout)
+        assert all(len(group) == 1 for group in decon_output["shares"])
+
+        shares_str = ";".join(group[0] for group in decon_output["shares"])
+        result = runner.invoke(app, ["reconstruct", "--shares", shares_str])
+
+        assert result.exit_code == 0
+        recon_output = json.loads(result.stdout)
+        assert recon_output["mnemonic"] == self.mnemo_24
+        assert recon_output["required"] == 1
+
     def test_bip39_only(self) -> None:
         """Test BIP39-only roundtrip (no SLIP39)."""
         # Deconstruct to BIP39
