@@ -133,7 +133,6 @@ def main(
     ] = False,
 ) -> None:
     """CLI for managing cryptocurrency mnemonics using BIP39 and SLIP39 standards."""
-    pass
 
 
 @app.command(
@@ -226,7 +225,6 @@ def deconstruct(
                 }
             )
         typer.echo(json.dumps(output))
-        raise typer.Exit(code=0)
     else:
         total_shares: list[list[str]] = []
         for part in bip_parts:
@@ -247,7 +245,6 @@ def deconstruct(
             "digits": digits,
         }
         typer.echo(json.dumps(output))
-        raise typer.Exit(code=0)
 
 
 @app.command(help="Reconstruct a BIP39 mnemonic from SLIP39 shares or BIP39 parts.")
@@ -358,7 +355,6 @@ def reconstruct(
         "digits": digits,
     }
     typer.echo(json.dumps(output))
-    raise typer.Exit(code=0)
 
 
 @app.command(help=version_help)

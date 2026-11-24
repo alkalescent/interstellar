@@ -11,18 +11,6 @@ Usage:
 
     # Test a specific binary
     python tests/smoke.py ./interstellar-macos-portable
-
-Alternative approach:
-    If you want to test binaries WITHOUT requiring the package to be installed,
-    you could add a --binary flag to skip import tests:
-
-        is_binary = "--binary" in sys.argv or cmd[0].startswith("./")
-        if not is_binary:
-            test_imports()
-            test_module_invocation()
-
-    However, the current approach requires `uv sync` in CI workflows to ensure
-    comprehensive testing of both the binary AND the package imports.
 """
 
 import importlib
