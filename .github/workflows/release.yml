@@ -48,7 +48,7 @@ jobs:
         PYPI_VERSION="${NEW_TAG#v}"
         echo "Tag version: $NEW_TAG"
         echo "PyPI version: $PYPI_VERSION"
-        echo "pypi_version=$PYPI_VERSION" >> $GITHUB_OUTPUT
+        echo "pypi_version=$PYPI_VERSION" >> "$GITHUB_OUTPUT"
       env:
         NEW_TAG: ${{ steps.version.outputs.new_tag }}
     # Note: hatch-vcs reads version from git tag at build time
