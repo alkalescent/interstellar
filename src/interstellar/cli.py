@@ -252,7 +252,8 @@ def reconstruct(
         typer.Option(
             "--filename",
             "-f",
-            help="File containing the SLIP39 shares (newline separated)",
+            help="File containing the shares, one group per line with commas "
+            "between shares",
         ),
     ] = "",
     standard: Annotated[
