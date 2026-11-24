@@ -1,5 +1,3 @@
-NAME := $(shell basename $(CURDIR))
-
 # DEV=1 includes dev dependencies
 UV_SYNC := uv sync $(if $(DEV),--dev,--no-dev)
 UV_SYNC_FROZEN := uv sync --frozen $(if $(DEV),--dev,--no-dev)
@@ -13,13 +11,13 @@ help:
 	@echo "  lint    - Run ruff linter and formatter check"
 	@echo "  type    - Run type checker (ty)"
 	@echo "  format  - Run ruff formatter"
-	@echo "  smoke   - Run smoke tests"
+	@echo "  smoke   - Run smoke tests (NAME=./binary to test a binary)"
 	@echo "  test    - Run tests with pytest"
 	@echo "  cov     - Run tests with pytest and coverage"
 	@echo "  build   - Build binary with Nuitka"
 	@echo "  qr      - Generate QR codes for donation addresses"
 	@echo "  clean   - Remove build artifacts"
-	@echo "  all     - Run lint, test, and build"
+	@echo "  all     - Build, smoke test, test with coverage, generate QR codes, and format"
 
 install:
 	$(UV_SYNC)
