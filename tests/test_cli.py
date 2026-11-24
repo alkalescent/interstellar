@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import tempfile
 from typing import Any
 
@@ -11,6 +12,12 @@ from interstellar.cli import app
 from interstellar.tools import BIP39, SLIP39
 
 runner = CliRunner()
+
+
+def plain_output(result: Any) -> str:
+    """Return the output without color codes, panel borders, or line breaks."""
+    text = re.sub(r"\x1b\[[0-9;]*m", "", result.output)
+    return " ".join(text.replace("│", " ").split())
 
 
 def assert_success_with_json(result: Any) -> dict[str, Any]:
@@ -414,9 +421,9 @@ class TestReconstruct:
         )
 
         assert result.exit_code == 2
-        assert "does not derive --address" in result.output
+        assert "does not derive --address" in plain_output(result)
         wrong = self.bip39.reconstruct([bip_parts[1], bip_parts[0]])
-        assert wrong not in result.output
+        assert wrong not in plain_output(result)
 
     def test_address_mismatch_swapped_parts(self) -> None:
         """Test --address fails when BIP39 parts are swapped."""
@@ -437,7 +444,7 @@ class TestReconstruct:
         )
 
         assert result.exit_code == 2
-        assert "does not derive --address" in result.output
+        assert "does not derive --address" in plain_output(result)
 
     def test_invalid_standard(self) -> None:
         """Test reconstruction with invalid standard."""
@@ -996,8 +1003,8 @@ class TestErrors:
             )
 
             assert result.exit_code == 2
-            assert "--required and --total must be" in result.output
-            assert self.mnemo_24 not in result.output
+            assert "--required and --total must be" in plain_output(result)
+            assert self.mnemo_24 not in plain_output(result)
 
     def test_invalid_mnemonic(self) -> None:
         """Test a mnemonic with a bad checksum fails without echoing it."""
@@ -1009,8 +1016,8 @@ class TestErrors:
         result = runner.invoke(app, ["deconstruct", "--mnemonic", bad_mnemonic])
 
         assert result.exit_code == 2
-        assert "Invalid BIP39 mnemonic" in result.output
-        assert bad_mnemonic not in result.output
+        assert "Invalid BIP39 mnemonic" in plain_output(result)
+        assert bad_mnemonic not in plain_output(result)
 
     def test_mistyped_share(self) -> None:
         """Test a mistyped share word fails without printing the shares."""
@@ -1024,9 +1031,9 @@ class TestErrors:
         result = runner.invoke(app, ["reconstruct", "--shares", shares_str])
 
         assert result.exit_code == 2
-        assert "The shares in group 2 do not recover" in result.output
-        assert "notaword" not in result.output
-        assert group2[1] not in result.output
+        assert "The shares in group 2 do not recover" in plain_output(result)
+        assert "notaword" not in plain_output(result)
+        assert group2[1] not in plain_output(result)
 
     def test_invalid_bip39_parts(self) -> None:
         """Test BIP39 parts that do not join fail without printing them."""
@@ -1039,5 +1046,5 @@ class TestErrors:
         )
 
         assert result.exit_code == 2
-        assert "The parts do not form a BIP39 mnemonic" in result.output
-        assert part not in result.output
+        assert "The parts do not form a BIP39 mnemonic" in plain_output(result)
+        assert part not in plain_output(result)
