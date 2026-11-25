@@ -70,6 +70,7 @@ jobs:
     - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       with:
         fetch-depth: 0  # Need full history for version calculation
+        persist-credentials: false
     
     - name: Calculate next version (dry run)
       id: version
@@ -255,7 +256,9 @@ jobs:
     
     steps:
     - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
-    
+      with:
+        persist-credentials: false
+
     - name: Create local tap and generate formula
       env:
         HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
