@@ -346,14 +346,10 @@ jobs:
         TAG="${{ needs.version.outputs.tag_name }}"
         REPO="${{ github.repository }}"
         
-        # Get description from pyproject.toml. A double quote would end the
-        # formula's Ruby string, and sed reads \, &, and | in the replacement
-        # below, so reject the first and escape the rest.
-        DESCRIPTION=$(grep '^description' pyproject.toml | sed 's/description = "\(.*\)"/\1/')
-        case "$DESCRIPTION" in
-          *'"'*) echo "The description in pyproject.toml must not contain a double quote"; exit 1 ;;
-        esac
-        DESCRIPTION=$(printf '%s' "$DESCRIPTION" | sed -e 's/[\\&|]/\\&/g')
+        # Description from pyproject.toml for the formula's Ruby string, via
+        # the sed replacement below. The script refuses ", #, and \ and
+        # escapes & and | for sed.
+        DESCRIPTION=$(python3 scripts/formula_desc.py)
         
         # Calculate SHA256 of release tarball (curl -f fails the step on an HTTP error)
         TARBALL_URL="https://github.com/${REPO}/archive/refs/tags/${TAG}.tar.gz"
