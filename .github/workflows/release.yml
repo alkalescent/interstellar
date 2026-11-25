@@ -343,10 +343,19 @@ jobs:
     name: Update Homebrew
     needs: [version, release]
     runs-on: ubuntu-latest
-    
+
     steps:
+    # The tap is pushed from its own clone with HOMEBREW_TAP_TOKEN, so this
+    # checkout keeps no credentials.
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-    
+      with:
+        persist-credentials: false
+
+    # scripts/formula_desc.py reads pyproject.toml with tomllib (Python 3.11+)
+    - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+      with:
+        python-version: '3.13'
+
     - name: Generate and push formula
       env:
         GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
