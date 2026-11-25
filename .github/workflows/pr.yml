@@ -268,6 +268,52 @@ jobs:
         EXPECTED_VERSION: v${{ needs.version.outputs.pypi_version }}
       run: python tests/smoke.py ${{ github.event.repository.name }}
 
+  smoke-binary:
+    name: Smoke Binary (${{ matrix.os }})
+    needs: version
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            binary_name: ''
+          - os: macos-latest
+            binary_name: ''
+          - os: windows-latest
+            binary_name: .exe
+    env:
+      # The release builds its binaries after PyPI has the release, so a
+      # binary that fails to build or run there leaves that release without
+      # binaries. This builds the release's onefile binary at the preview
+      # version and runs the release's binary smoke on it before merge.
+      SETUPTOOLS_SCM_PRETEND_VERSION: ${{ needs.version.outputs.pypi_version }}
+
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
+
+    - name: Set up Python
+      uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+      with:
+        python-version: '3.13'
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
+
+    - name: Build onefile binary
+      env:
+        MODE: onefile
+      run: make build
+      shell: bash
+
+    - name: Run smoke tests
+      env:
+        EXPECTED_VERSION: v${{ needs.version.outputs.pypi_version }}
+      run: make smoke NAME=./${{ github.event.repository.name }}${{ matrix.binary_name }}
+      shell: bash
+
   smoke-homebrew:
     name: Smoke Homebrew
     needs: test
