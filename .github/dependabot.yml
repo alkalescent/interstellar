@@ -5,8 +5,18 @@ updates:
     schedule:
       # Moves the pinned action SHAs in .github/workflows
       interval: "monthly"
+    groups:
+      # Each merge to master cuts a release, so minor and patch updates share
+      # one pull request; each major update still gets its own
+      github-actions:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
 
   - package-ecosystem: "uv"
     directory: "/" # Location of pyproject.toml and uv.lock
     schedule:
       interval: "monthly"
+    groups:
+      uv:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
