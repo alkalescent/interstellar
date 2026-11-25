@@ -1,17 +1,12 @@
 import json
-import logging
-from importlib.metadata import PackageNotFoundError
-from importlib.metadata import version as get_version
-from pathlib import Path
 from typing import Annotated
 
 import typer
+from shamir_mnemonic import MnemonicError
+from shamir_mnemonic.constants import MAX_SHARE_COUNT
 
+from interstellar import __version__
 from interstellar.tools import BIP39, SLIP39
-
-PACKAGE_NAME = Path(__file__).parent.name
-
-logging.getLogger("slip39").setLevel(logging.ERROR)
 
 
 class CLI:
@@ -29,13 +24,27 @@ class CLI:
             filename: Path to file containing mnemonics.
 
         Returns:
-            2D list of mnemonic parts, one row per line.
+            2D list of mnemonic parts, one row per line, skipping blank lines.
         """
         with open(filename) as f:
             return [
                 [subline.strip() for subline in line.strip().split(",")]
                 for line in f.readlines()
+                if line.strip()
             ]
+
+    def normalize(self, mnemonic: str) -> str:
+        """Collapse whitespace and lowercase a mnemonic.
+
+        BIP39 validation splits on single spaces and matches lowercase words.
+
+        Args:
+            mnemonic: Mnemonic as typed or read from a file.
+
+        Returns:
+            The mnemonic's words in lowercase, separated by single spaces.
+        """
+        return " ".join(mnemonic.split()).lower()
 
     def enforce_standard(self, standard: str) -> None:
         """Validate that standard is either 'BIP39' or 'SLIP39'.
@@ -66,7 +75,12 @@ class CLI:
         return result
 
 
-app = typer.Typer(context_settings={"help_option_names": ["-h", "--help"]})
+# Typer's tracebacks print each frame's local variables by default, and
+# here those hold the mnemonic, its entropy, and the shares.
+app = typer.Typer(
+    pretty_exceptions_show_locals=False,
+    context_settings={"help_option_names": ["-h", "--help"]},
+)
 cli = CLI()
 version_help = "Show the installed version."
 
@@ -116,7 +130,6 @@ def main(
     ] = False,
 ) -> None:
     """CLI for managing cryptocurrency mnemonics using BIP39 and SLIP39 standards."""
-    pass
 
 
 @app.command(
@@ -124,7 +137,13 @@ def main(
 )
 def deconstruct(
     mnemonic: Annotated[
-        str, typer.Option("--mnemonic", "-m", help="BIP39 mnemonic to deconstruct")
+        str,
+        typer.Option(
+            "--mnemonic",
+            "-m",
+            help="BIP39 mnemonic to deconstruct, kept in shell history. Without "
+            "this or --filename, a prompt asks for it with hidden input",
+        ),
     ] = "",
     filename: Annotated[
         str, typer.Option("--filename", "-f", help="File containing the BIP39 mnemonic")
@@ -157,6 +176,13 @@ def deconstruct(
 ) -> None:
     """Split a BIP39 mnemonic into parts or SLIP39 shares."""
     cli.enforce_standard(standard)
+    if standard.upper() == "SLIP39" and not (
+        required == total == 1 or 2 <= required <= total <= MAX_SHARE_COUNT
+    ):
+        raise typer.BadParameter(
+            "--required and --total must be 1 of 1, or M of N with "
+            f"2 <= M <= N <= {MAX_SHARE_COUNT}"
+        )
     if not mnemonic and filename:
         try:
             mnemos = cli.get_mnemos(filename)
@@ -164,6 +190,9 @@ def deconstruct(
                 mnemonic = mnemos[0][0]
         except FileNotFoundError:
             raise typer.BadParameter(f"File not found: {filename}") from None
+    elif not mnemonic:
+        mnemonic = typer.prompt("BIP39 mnemonic", hide_input=True, err=True)
+    mnemonic = cli.normalize(mnemonic)
     if not mnemonic:
         raise typer.BadParameter("Mnemonic is required")
 
@@ -171,7 +200,10 @@ def deconstruct(
     word_count = len(mnemonic.split())
     split = 2 if word_count == 24 else 1
 
-    bip_parts = cli.bip39.deconstruct(mnemonic, split)
+    try:
+        bip_parts = cli.bip39.deconstruct(mnemonic, split)
+    except ValueError:
+        raise typer.BadParameter("Invalid BIP39 mnemonic") from None
     if standard.upper() == "BIP39":
         output = []
         for bip_part in bip_parts:
@@ -190,7 +222,6 @@ def deconstruct(
                 }
             )
         typer.echo(json.dumps(output))
-        raise typer.Exit(code=0)
     else:
         total_shares: list[list[str]] = []
         for part in bip_parts:
@@ -205,11 +236,12 @@ def deconstruct(
         output = {
             "standard": "SLIP39",
             "shares": total_shares,
+            # The full mnemonic's address, for reconstruct --address
+            "eth_addr": cli.bip39.eth(mnemonic),
             "split": split,
             "digits": digits,
         }
         typer.echo(json.dumps(output))
-        raise typer.Exit(code=0)
 
 
 @app.command(help="Reconstruct a BIP39 mnemonic from SLIP39 shares or BIP39 parts.")
@@ -219,7 +251,8 @@ def reconstruct(
         typer.Option(
             "--shares",
             "-x",
-            help="SLIP39 shares to reconstruct",
+            help="SLIP39 shares to reconstruct, kept in shell history. Without "
+            "this or --filename, a prompt asks for them with hidden input",
             parser=cli.parse_2D_list,
         ),
     ] = "",
@@ -228,7 +261,8 @@ def reconstruct(
         typer.Option(
             "--filename",
             "-f",
-            help="File containing the SLIP39 shares (newline separated)",
+            help="File containing the shares, one group per line with commas "
+            "between shares",
         ),
     ] = "",
     standard: Annotated[
@@ -240,6 +274,16 @@ def reconstruct(
             "--digits", "-d", help="Input format: use digits instead of words"
         ),
     ] = False,
+    address: Annotated[
+        str,
+        typer.Option(
+            "--address",
+            "-a",
+            help="The eth_addr that deconstruct printed. Fails if the recovered "
+            "mnemonic derives a different address, as it does when groups or "
+            "parts are out of order",
+        ),
+    ] = "",
 ) -> None:
     """Reconstruct a BIP39 mnemonic from SLIP39 shares or BIP39 parts."""
     cli.enforce_standard(standard)
@@ -249,6 +293,14 @@ def reconstruct(
             share_groups = cli.get_mnemos(filename)
         except FileNotFoundError:
             raise typer.BadParameter(f"File not found: {filename}") from None
+    elif not share_groups:
+        share_groups = cli.parse_2D_list(
+            typer.prompt(
+                "Shares (commas between shares, semicolons between groups)",
+                hide_input=True,
+                err=True,
+            )
+        )
     if not share_groups:
         raise typer.BadParameter("Shares are required")
 
@@ -260,36 +312,52 @@ def reconstruct(
             if digits:
                 group = [_convert_digits_to_words(member, "SLIP39") for member in group]
 
-            required = cli.slip39.get_required(group[gidx])
-            reconstructed_parts.append(cli.slip39.reconstruct(group))
+            try:
+                required = cli.slip39.get_required(group[0])
+                reconstructed_parts.append(cli.slip39.reconstruct(group))
+            except MnemonicError:
+                raise typer.BadParameter(
+                    f"The shares in group {gidx + 1} do not recover a secret: "
+                    "check each word and the number of shares"
+                ) from None
     else:  # BIP39
-        reconstructed_parts = [part for group in share_groups for part in group]
+        reconstructed_parts = [
+            cli.normalize(part) for group in share_groups for part in group
+        ]
         if digits:
             # Convert 1-indexed digits back to words
             reconstructed_parts = [
                 _convert_digits_to_words(share, "BIP39")
                 for share in reconstructed_parts
             ]
-    reconstructed = cli.bip39.reconstruct(reconstructed_parts)
+    try:
+        reconstructed = cli.bip39.reconstruct(reconstructed_parts)
+    except (ValueError, LookupError):
+        raise typer.BadParameter(
+            "The parts do not form a BIP39 mnemonic: "
+            "check each word and the number of parts"
+        ) from None
+    # Swapped groups or parts still give a valid mnemonic, of another wallet
+    eth_addr = cli.bip39.eth(reconstructed)
+    if address and address.lower() != eth_addr.lower():
+        raise typer.BadParameter(
+            "The recovered mnemonic does not derive --address. "
+            "Check that the groups or parts are in their original order."
+        )
     output = {
         "standard": "BIP39",
         "mnemonic": reconstructed,
-        "eth_addr": cli.bip39.eth(reconstructed),
+        "eth_addr": eth_addr,
         "required": required,
         "digits": digits,
     }
     typer.echo(json.dumps(output))
-    raise typer.Exit(code=0)
 
 
 @app.command(help=version_help)
 def version() -> None:
     """Display the installed package version."""
-    prefix = "v"
-    try:
-        typer.echo(f"{prefix}{get_version(PACKAGE_NAME)}")
-    except PackageNotFoundError:
-        typer.echo(f"{prefix}0.0.0")
+    typer.echo(f"v{__version__}")
     # Exit is needed for the --version flag callback to terminate execution.
     raise typer.Exit(code=0)
 

@@ -9,11 +9,12 @@ A command-line tool for managing cryptocurrency mnemonics using BIP39 and SLIP39
 
 ## ✨ Features
 
-- **BIP39 Support**: Generate, validate, and split BIP39 mnemonic phrases
+- **BIP39 Support**: Validate and split BIP39 mnemonic phrases
 - **SLIP39 Support**: Create Shamir Secret Sharing (SLIP39) shares from mnemonics
 - **Flexible Splitting**: Deconstruct 24-word mnemonics into multiple 12-word parts
 - **Share Reconstruction**: Reconstruct mnemonics from SLIP39 shares with threshold requirements
 - **Digit Mode**: Convert mnemonics to/from numeric format for easier backup (1-indexed: BIP39 uses 1-2048, SLIP39 uses 1-1024)
+- **Address Check**: Confirm a reconstructed mnemonic against the Ethereum address recorded when it was deconstructed
 
 ## 💖 Support
 
@@ -129,31 +130,42 @@ The CLI provides two main commands: `deconstruct` and `reconstruct`.
 
 Split a BIP39 mnemonic into multiple parts or SLIP39 shares.
 
-**From command line:**
+**From a hidden prompt:**
 ```bash
-interstellar deconstruct --mnemonic "your 24 word mnemonic phrase here..."
+interstellar deconstruct
 ```
+
+With neither `--mnemonic` nor `--filename`, the command prompts for the mnemonic and hides what you type. The prompt reads from the terminal, so pass a file with `--filename` instead of piping it in.
 
 **From file:**
 ```bash
 interstellar deconstruct --filename seed.txt
 ```
 
+**From command line:**
+```bash
+interstellar deconstruct --mnemonic "your 24 word mnemonic phrase here..."
+```
+
+> **Warning**: A mnemonic passed with `--mnemonic`, or shares passed with `--shares`, are saved in your shell's history file and show in the process list while the command runs. Use the prompt or `--filename` instead.
+
 **Options:**
-- `--mnemonic`: BIP39 mnemonic to deconstruct (default: empty, reads from file)
+- `--mnemonic`: BIP39 mnemonic to deconstruct, saved in shell history (default: empty, prompts unless `--filename` is given)
 - `--filename`: File containing the BIP39 mnemonic (default: empty)
 - `--standard`: Output format: `BIP39` or `SLIP39` (default: `SLIP39`)
 - `--required`: Required shares for SLIP39 reconstruction (default: `2`)
 - `--total`: Total SLIP39 shares to generate (default: `3`)
 - `--digits`: Output numeric format instead of words (default: `false`)
 
+For SLIP39, `--required` and `--total` take 1 of 1, or M of N with 2 <= M <= N <= 16.
+
 **Output Format (JSON):**
 
 For BIP39:
 ```json
 [
-  {"standard": "BIP39", "mnemonic": "first part words..."},
-  {"standard": "BIP39", "mnemonic": "second part words..."}
+  {"standard": "BIP39", "mnemonic": "first part words...", "eth_addr": "0x...", "digits": false},
+  {"standard": "BIP39", "mnemonic": "second part words...", "eth_addr": "0x...", "digits": false}
 ]
 ```
 
@@ -164,14 +176,18 @@ For SLIP39:
   "shares": [
     ["share1 group1", "share2 group1", "share3 group1"],
     ["share1 group2", "share2 group2", "share3 group2"]
-  ]
+  ],
+  "eth_addr": "0x...",
+  "split": 2,
+  "digits": false
 }
 ```
+
+`eth_addr` is the first Ethereum address (`m/44'/60'/0'/0/0`, without a passphrase) derived from a mnemonic. In BIP39 output, each part's `eth_addr` belongs to that part. In SLIP39 output, it belongs to the full mnemonic: record it with the shares and pass it to `reconstruct --address`. BIP39 output has no address for the full mnemonic, and deconstructing it with `--standard SLIP39` prints one. `split` is 2 when a 24-word mnemonic is split into two 12-word halves, each with its own group of shares, and 1 otherwise.
 
 **Example: Create SLIP39 shares**
 ```bash
 interstellar deconstruct \
-  --mnemonic "word1 word2 ... word24" \
   --standard SLIP39 \
   --required 2 \
   --total 3
@@ -179,49 +195,60 @@ interstellar deconstruct \
 
 **Example: Split into BIP39 parts**
 ```bash
-interstellar deconstruct \
-  --mnemonic "word1 word2 ... word24" \
-  --standard BIP39
+interstellar deconstruct --standard BIP39
 ```
 
 ### Reconstruct Command
 
 Reconstruct a BIP39 mnemonic from shares or parts.
 
+**From a hidden prompt:**
+```bash
+interstellar reconstruct --address 0x...
+```
+
+With neither `--shares` nor `--filename`, the command prompts for the shares and hides what you type. Separate shares with commas and groups with semicolons.
+
+**From file:**
+```bash
+interstellar reconstruct --filename shares.txt --address 0x...
+```
+
 **From command line (semicolon and comma delimited):**
 ```bash
 interstellar reconstruct --shares "group1_share1,group1_share2;group2_share1,group2_share2"
 ```
 
-**From file:**
-```bash
-interstellar reconstruct --filename shares.txt
-```
-
 **Options:**
-- `--shares`: Shares to reconstruct, formatted as semicolon-separated groups with comma-separated shares (default: empty, reads from file)
-- `--filename`: File containing shares (default: empty)
+- `--shares`: Shares to reconstruct, formatted as semicolon-separated groups with comma-separated shares, saved in shell history (default: empty, prompts unless `--filename` is given)
+- `--filename`: File containing shares, one group per line with commas between shares (default: empty)
 - `--standard`: Input format: `BIP39` or `SLIP39` (default: `SLIP39`)
 - `--digits`: Input is in numeric format (default: `false`)
+- `--address`: The `eth_addr` that `deconstruct` printed (default: empty, no check)
+
+Groups and parts must stay in their original order. Swapped ones still form a valid mnemonic of a different wallet. Pass `--address` to make the command fail when the recovered mnemonic derives a different address.
 
 **Output Format (JSON):**
 ```json
 {
   "standard": "BIP39",
-  "mnemonic": "reconstructed 24 word mnemonic phrase..."
+  "mnemonic": "reconstructed 24 word mnemonic phrase...",
+  "eth_addr": "0x...",
+  "required": 2,
+  "digits": false
 }
 ```
 
-**Example: Reconstruct from SLIP39 shares (CLI)**
+`required` is the SLIP39 threshold read from the shares, and 0 for BIP39 parts.
+
+**Example: Reconstruct from SLIP39 shares at the prompt**
 ```bash
-interstellar reconstruct \
-  --shares "group1_share1,group1_share2;group2_share1,group2_share2" \
-  --standard SLIP39
+interstellar reconstruct --standard SLIP39 --address 0x...
 ```
 
 **Example: Reconstruct from file**
 ```bash
-interstellar reconstruct --filename shares.txt --standard SLIP39
+interstellar reconstruct --filename shares.txt --standard SLIP39 --address 0x...
 ```
 
 ## 📁 Files
@@ -235,7 +262,7 @@ word1 word2 word3 ... word24
 ```
 
 **For reconstruct command:**
-Shares should be grouped by line, with comma-separated shares within each group:
+Shares should be grouped by line, in their original order, with comma-separated shares within each group (blank lines are skipped):
 ```
 group1_share1,group1_share2
 group2_share1,group2_share2
@@ -249,7 +276,7 @@ academic arcade ... (20 words),academic axes ... (20 words)
 
 ### Command-Line Format
 
-When using `--shares` on the command line:
+When using `--shares` or the prompt:
 - Use commas (`,`) to separate shares within a group
 - Use semicolons (`;`) to separate groups
 - Example: `"group1_share1,group1_share2;group2_share1,group2_share2"`
@@ -265,8 +292,8 @@ interstellar deconstruct --filename seed.txt | jq -r '.shares'
 # Extract the reconstructed mnemonic
 interstellar reconstruct --filename shares.txt | jq -r '.mnemonic'
 
-# Save output to file
-interstellar deconstruct --mnemonic "word1 ..." > output.json
+# Save output to file (the prompt still shows in the terminal)
+interstellar deconstruct > output.json
 ```
 
 ## 🧪 Testing
@@ -290,7 +317,9 @@ uv run python -m pytest --cov --cov-report=term-missing --cov-fail-under=90
 - Store mnemonic backups securely in multiple physical locations
 - SLIP39 shares should be distributed to different secure locations
 - Use the digit format for metal plate backups or other durable storage
-- Always verify reconstructed mnemonics match the original
+- Always verify reconstructed mnemonics match the original, for example with `reconstruct --address`
+- Give mnemonics and shares at the prompt or with `--filename`: `--mnemonic` and `--shares` save them in shell history and show them in the process list
+- Passphrases are unsupported. SLIP39 shares made with a passphrase in another tool, such as a hardware wallet, recover to a different mnemonic here with no error, and `eth_addr` is always derived without a BIP39 passphrase
 - This tool is for educational and personal use only
 
 ## 🏗️ Architecture
@@ -317,27 +346,24 @@ The CLI consists of the following modules:
 1. Generate a 24-word BIP39 mnemonic
 2. Split it into 2 parts (two 12-word mnemonics)
 3. Convert each part to SLIP39 shares (2-of-3)
-4. Distribute 6 total shares across secure locations
-5. To recover, need 2 shares from each group (4 shares total)
+4. Distribute 6 total shares across secure locations, with a record of the full mnemonic's `eth_addr`
+5. To recover, need 2 shares from each group (4 shares total), in their original order
 
 ```bash
 # Deconstruct (outputs JSON)
 interstellar deconstruct \
-  --mnemonic "abandon abandon ... art" \
   --standard SLIP39 \
   --required 2 \
   --total 3 > shares.json
 
-# Extract shares with jq
-cat shares.json | jq -r '.shares'
+# Extract the shares and the address to record
+jq -r '.shares, .eth_addr' shares.json
 
-# Reconstruct from file
-interstellar reconstruct --filename backup_shares.txt --standard SLIP39
+# Reconstruct from file and check the address
+interstellar reconstruct --filename backup_shares.txt --standard SLIP39 --address 0x...
 
-# Or from command line
-interstellar reconstruct \
-  --shares "share1,share2;share3,share4" \
-  --standard SLIP39
+# Or at the hidden prompt
+interstellar reconstruct --standard SLIP39 --address 0x...
 ```
 
 ## 🔒 Cryptotag Odin 7 Backup Guide
@@ -359,7 +385,6 @@ A 24-word BIP39 seed is split into **2 wallet parts** (12 words each), and each 
 ```bash
 # Generate SLIP39 shares in digit format for metal engraving
 interstellar deconstruct \
-  --mnemonic "your 24 word seed phrase here..." \
   --required 2 \
   --total 3 \
   --digits
@@ -371,9 +396,12 @@ Output structure:
   "shares": [
     ["wallet1_share1 (20 digits)", "wallet1_share2", "wallet1_share3"],
     ["wallet2_share1 (20 digits)", "wallet2_share2", "wallet2_share3"]
-  ]
+  ],
+  "eth_addr": "0x..."
 }
 ```
+
+Record `eth_addr` for the restore step.
 
 ### Hexagon Face Layout
 
@@ -415,12 +443,12 @@ To recover your seed, you need **2 shares from each wallet part** (4 shares tota
 345 678 901 ... 20 digits, 456 789 012 ... 20 digits
 ```
 
-Line 1 contains 2 shares from wallet 1, line 2 contains 2 shares from wallet 2.
+Line 1 contains 2 shares from wallet 1, line 2 contains 2 shares from wallet 2. Swapped lines recover a different valid mnemonic, which `--address` rejects.
 
 2. Reconstruct:
 
 ```bash
-interstellar reconstruct --filename shares.txt --digits
+interstellar reconstruct --filename shares.txt --digits --address 0x...
 ```
 
 ### Security Notes
@@ -431,10 +459,11 @@ interstellar reconstruct --filename shares.txt --digits
 
 ## 📚 Dependencies
 
-- `hdwallet`: HD wallet generation and derivation (subdependency of slip39)
 - `mnemonic`: BIP39 mnemonic implementation
-- `slip39`: SLIP39 Shamir Secret Sharing
+- `shamir-mnemonic`: SLIP39 Shamir Secret Sharing
 - `typer`: Modern CLI framework
+
+Ethereum address derivation is pure Python, in `wallet.py` and `keccak.py`.
 
 ## 📄 License
 

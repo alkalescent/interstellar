@@ -1,5 +1,3 @@
-NAME := $(shell basename $(CURDIR))
-
 # DEV=1 includes dev dependencies
 UV_SYNC := uv sync $(if $(DEV),--dev,--no-dev)
 UV_SYNC_FROZEN := uv sync --frozen $(if $(DEV),--dev,--no-dev)
@@ -13,13 +11,13 @@ help:
 	@echo "  lint    - Run ruff linter and formatter check"
 	@echo "  type    - Run type checker (ty)"
 	@echo "  format  - Run ruff formatter"
-	@echo "  smoke   - Run smoke tests"
+	@echo "  smoke   - Run smoke tests (NAME=./binary to test a binary)"
 	@echo "  test    - Run tests with pytest"
 	@echo "  cov     - Run tests with pytest and coverage"
 	@echo "  build   - Build binary with Nuitka"
 	@echo "  qr      - Generate QR codes for donation addresses"
 	@echo "  clean   - Remove build artifacts"
-	@echo "  all     - Run lint, test, and build"
+	@echo "  all     - Build, smoke test, test with coverage, generate QR codes, and format"
 
 install:
 	$(UV_SYNC)
@@ -28,30 +26,30 @@ ci:
 	$(UV_SYNC_FROZEN)
 
 lint:
-	uv run ruff check .
-	uv run ruff format --check .
+	uv run --locked ruff check .
+	uv run --locked ruff format --check .
 
 type:
-	uv run ty check src tests
+	uv run --locked ty check src tests
 
 format:
-	uv run ruff check . --fix
-	uv run ruff format .
+	uv run --locked ruff check . --fix
+	uv run --locked ruff format .
 
 test:
-	uv run python -m pytest
+	uv run --locked python -m pytest
 
 smoke:
-	uv run python tests/smoke.py $(NAME)
+	uv run --locked python tests/smoke.py $(NAME)
 
 cov:
-	uv run python -m pytest --cov
+	uv run --locked python -m pytest --cov
 
 build:
 	bash scripts/build.sh
 
 qr:
-	uv run python scripts/qr.py
+	uv run --locked python scripts/qr.py
 
 clean:
 	rm -rf cli.dist/ dist/ build/ *.egg-info/ .coverage coverage.xml

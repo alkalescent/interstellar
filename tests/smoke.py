@@ -11,21 +11,10 @@ Usage:
 
     # Test a specific binary
     python tests/smoke.py ./interstellar-macos-portable
-
-Alternative approach:
-    If you want to test binaries WITHOUT requiring the package to be installed,
-    you could add a --binary flag to skip import tests:
-
-        is_binary = "--binary" in sys.argv or cmd[0].startswith("./")
-        if not is_binary:
-            test_imports()
-            test_module_invocation()
-
-    However, the current approach requires `uv sync` in CI workflows to ensure
-    comprehensive testing of both the binary AND the package imports.
 """
 
 import importlib
+import os
 import subprocess
 import sys
 import tomllib
@@ -58,6 +47,10 @@ def test_version(cmd: list[str]) -> None:
     version = result.stdout.strip()
     assert version, "version output empty"
     assert version.startswith("v"), "version should start with 'v'"
+    # CI sets EXPECTED_VERSION to the version it built, for example the tag
+    expected = os.environ.get("EXPECTED_VERSION")
+    if expected:
+        assert version == expected, f"version {version} != expected {expected}"
     print(f"[+] version: {version}")
 
 

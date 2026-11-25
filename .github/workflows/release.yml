@@ -6,8 +6,7 @@ on:
       - master
 
 permissions:
-  contents: write
-  id-token: write
+  contents: read
 
 jobs:
   test:
@@ -18,20 +17,22 @@ jobs:
     name: Version
     needs: test  # Only release after tests pass
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Needed to push the version tag
     outputs:
       new_version: ${{ steps.version.outputs.new_tag }}
       tag_name: ${{ steps.version.outputs.new_tag }}
       pypi_version: ${{ steps.set-version.outputs.pypi_version }}
     
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       with:
         fetch-depth: 0
         token: ${{ secrets.GITHUB_TOKEN }}
     
     - name: Bump version and push tag
       id: version
-      uses: anothrNick/github-tag-action@v1
+      uses: anothrNick/github-tag-action@4ed44965e0db8dab2b466a16da04aec3cc312fd8 # 1.75.0
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         DEFAULT_BUMP: minor
@@ -47,7 +48,7 @@ jobs:
         PYPI_VERSION="${NEW_TAG#v}"
         echo "Tag version: $NEW_TAG"
         echo "PyPI version: $PYPI_VERSION"
-        echo "pypi_version=$PYPI_VERSION" >> $GITHUB_OUTPUT
+        echo "pypi_version=$PYPI_VERSION" >> "$GITHUB_OUTPUT"
       env:
         NEW_TAG: ${{ steps.version.outputs.new_tag }}
     # Note: hatch-vcs reads version from git tag at build time
@@ -56,23 +57,26 @@ jobs:
     name: Publish PyPI
     needs: version
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write  # Required for OIDC trusted publishing to PyPI
     environment:
       name: pypi
       url: https://pypi.org/p/${{ github.event.repository.name }}
     
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       with:
         ref: ${{ needs.version.outputs.tag_name }}
         fetch-depth: 0  # Full history needed for hatch-vcs
 
     - name: Set up Python
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
       with:
         python-version: '3.13'
     
     - name: Install uv
-      uses: astral-sh/setup-uv@v7
+      uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
     
     - name: Build distributions
       run: |
@@ -80,7 +84,7 @@ jobs:
         uv build --wheel
     
     - name: Publish to PyPI
-      uses: pypa/gh-action-pypi-publish@release/v1
+      uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
       # Uses OIDC trusted publishing - configure at:
       # https://pypi.org/manage/account/publishing/
 
@@ -103,18 +107,18 @@ jobs:
             binary_name: .exe
     
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       with:
         ref: ${{ needs.version.outputs.tag_name }}
         fetch-depth: 0
 
     - name: Set up Python
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
       with:
         python-version: '3.13'
     
     - name: Install uv
-      uses: astral-sh/setup-uv@v7
+      uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
     
     - name: Build onefile binary
       env:
@@ -130,7 +134,7 @@ jobs:
       shell: bash
     
     - name: Upload artifact
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
       with:
         name: ${{ github.event.repository.name }}-${{ matrix.artifact_suffix }}
         path: ${{ github.event.repository.name }}-${{ matrix.artifact_suffix }}
@@ -152,18 +156,18 @@ jobs:
             platform: windows
     
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       with:
         ref: ${{ needs.version.outputs.tag_name }}
         fetch-depth: 0
 
     - name: Set up Python
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
       with:
         python-version: '3.13'
     
     - name: Install uv
-      uses: astral-sh/setup-uv@v7
+      uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
     
     - name: Build standalone distribution
       env:
@@ -177,7 +181,7 @@ jobs:
       shell: bash
     
     - name: Upload artifact
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
       with:
         name: ${{ github.event.repository.name }}-${{ matrix.platform }}-fast
         path: ${{ github.event.repository.name }}-${{ matrix.platform }}-fast.tar.gz
@@ -187,14 +191,18 @@ jobs:
     name: Release
     needs: [version, build-portable, build-fast]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Needed to create the release and upload its assets
+      id-token: write  # Needed to sign the build provenance attestation
+      attestations: write  # Needed to store the build provenance attestation
     
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       with:
         ref: ${{ needs.version.outputs.tag_name }}
 
     - name: Download all artifacts
-      uses: actions/download-artifact@v5
+      uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
       with:
         path: artifacts
     
@@ -202,10 +210,17 @@ jobs:
       run: |
         mkdir -p release-assets
         find artifacts -type f -exec cp {} release-assets/ \;
+        (cd release-assets && sha256sum -- * > SHA256SUMS)
         ls -lah release-assets/
+        cat release-assets/SHA256SUMS
+    
+    - name: Attest build provenance
+      uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+      with:
+        subject-checksums: release-assets/SHA256SUMS
     
     - name: Create Release
-      uses: softprops/action-gh-release@v2
+      uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
       with:
         tag_name: ${{ needs.version.outputs.tag_name }}
         files: release-assets/*
@@ -218,6 +233,8 @@ jobs:
           | **Fast** (`*-fast.tar.gz`) | Optimized for speed, extract and run | ~1 sec |
           
           Choose **Portable** for convenience, **Fast** for performance.
+          
+          Verify a download with `sha256sum -c SHA256SUMS --ignore-missing` or `gh attestation verify <file> -R ${{ github.repository }}`.
         generate_release_notes: true
         draft: false
         prerelease: ${{ contains(needs.version.outputs.new_version, 'alpha') || contains(needs.version.outputs.new_version, 'beta') || contains(needs.version.outputs.new_version, 'rc') }}
@@ -228,9 +245,9 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
     
-    - uses: actions/setup-python@v6
+    - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
       with:
         python-version: '3.13'
     
@@ -245,11 +262,18 @@ jobs:
         # simple index is CDN-cached per edge, so a separate curl check can
         # see the release while pip's request lands on a stale edge moments
         # later and fails with "No matching distribution found". Retrying the
-        # real command makes the check and the action the same client.
+        # real command makes the check and the action the same client. Only
+        # that error is retried; any other install error fails at once.
         for i in $(seq 1 $MAX_ATTEMPTS); do
-          if pip install "${NAME}==${VERSION}"; then
+          if OUTPUT=$(pip install "${NAME}==${VERSION}" 2>&1); then
+            echo "$OUTPUT"
             echo "Installed ${NAME}==${VERSION} on attempt $i"
             exit 0
+          fi
+          echo "$OUTPUT"
+          if ! grep -qF "No matching distribution found" <<< "$OUTPUT"; then
+            echo "Install failed with an error other than a missing release"
+            exit 1
           fi
           echo "Attempt $i/$MAX_ATTEMPTS: not installable yet, waiting ${SLEEP_SECONDS}s..."
           sleep $SLEEP_SECONDS
@@ -258,11 +282,13 @@ jobs:
         exit 1
 
     - name: Run smoke tests
+      env:
+        EXPECTED_VERSION: ${{ needs.version.outputs.tag_name }}
       run: python tests/smoke.py ${{ github.event.repository.name }}
 
   smoke-binary:
     name: Smoke Binary (${{ matrix.os }})
-    needs: [build-portable, build-fast]
+    needs: [version, build-portable, build-fast]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -276,20 +302,20 @@ jobs:
             artifact_suffix: windows-portable.exe
     
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
     
-    - uses: actions/setup-python@v6
+    - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
       with:
         python-version: '3.13'
     
     - name: Install uv
-      uses: astral-sh/setup-uv@v7
+      uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
     
     - name: Install package (for import tests)
-      run: make install
+      run: make ci
     
     - name: Download binary
-      uses: actions/download-artifact@v5
+      uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
       with:
         name: ${{ github.event.repository.name }}-${{ matrix.artifact_suffix }}
     
@@ -298,6 +324,8 @@ jobs:
       shell: bash
     
     - name: Run smoke tests
+      env:
+        EXPECTED_VERSION: ${{ needs.version.outputs.tag_name }}
       run: make smoke NAME=./${{ github.event.repository.name }}-${{ matrix.artifact_suffix }}
 
   homebrew:
@@ -306,7 +334,7 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
     
     - name: Generate and push formula
       env:
@@ -316,12 +344,19 @@ jobs:
         TAG="${{ needs.version.outputs.tag_name }}"
         REPO="${{ github.repository }}"
         
-        # Get description from pyproject.toml
+        # Get description from pyproject.toml. A double quote would end the
+        # formula's Ruby string, and sed reads \, &, and | in the replacement
+        # below, so reject the first and escape the rest.
         DESCRIPTION=$(grep '^description' pyproject.toml | sed 's/description = "\(.*\)"/\1/')
+        case "$DESCRIPTION" in
+          *'"'*) echo "The description in pyproject.toml must not contain a double quote"; exit 1 ;;
+        esac
+        DESCRIPTION=$(printf '%s' "$DESCRIPTION" | sed -e 's/[\\&|]/\\&/g')
         
-        # Calculate SHA256 of release tarball
+        # Calculate SHA256 of release tarball (curl -f fails the step on an HTTP error)
         TARBALL_URL="https://github.com/${REPO}/archive/refs/tags/${TAG}.tar.gz"
-        SHA256=$(curl -sL "$TARBALL_URL" | shasum -a 256 | cut -d' ' -f1)
+        curl -fsSL -o "$RUNNER_TEMP/source.tar.gz" "$TARBALL_URL"
+        SHA256=$(shasum -a 256 "$RUNNER_TEMP/source.tar.gz" | cut -d' ' -f1)
         
         # Convert name to Ruby class name (capitalize, remove hyphens)
         CLASS_NAME=$(echo "$NAME" | sed 's/-/ /g' | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) tolower(substr($i,2))}1' | tr -d ' ')

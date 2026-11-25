@@ -12,12 +12,12 @@ fi
 
 MODE="${MODE:-standalone}"
 
-SITE_PACKAGES=$(uv run python -c "import sysconfig; print(sysconfig.get_path('purelib'))")
+SITE_PACKAGES=$(uv run --locked python -c "import sysconfig; print(sysconfig.get_path('purelib'))")
 # Nuitka's self-execution guard intercepts a leading -m as Python's module
 # flag, which breaks `interstellar deconstruct -m <mnemonic>`, the documented
 # short form of --mnemonic. The guard protects against a compiled binary
 # re-invoking itself as an interpreter, which this CLI never does.
-uv run python -m nuitka \
+uv run --locked python -m nuitka \
   --mode="${MODE}" \
   --output-filename="${NAME}" \
   --no-deployment-flag=self-execution \
