@@ -47,9 +47,11 @@ def test_version(cmd: list[str]) -> None:
     version = result.stdout.strip()
     assert version, "version output empty"
     assert version.startswith("v"), "version should start with 'v'"
-    # CI sets EXPECTED_VERSION to the version it built, for example the tag
+    # CI sets EXPECTED_VERSION to the version it built, for example the tag.
+    # An empty value means CI lost that version, so the check fails on it.
     expected = os.environ.get("EXPECTED_VERSION")
-    if expected:
+    if expected is not None:
+        assert expected, "EXPECTED_VERSION is set but empty"
         assert version == expected, f"version {version} != expected {expected}"
     print(f"[+] version: {version}")
 
