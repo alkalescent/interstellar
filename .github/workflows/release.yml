@@ -189,7 +189,9 @@ jobs:
 
   release:
     name: Release
-    needs: [version, build-portable, build-fast]
+    # The binary smoke gates the upload; publish stays ahead of smoke-pypi,
+    # which installs what publish uploaded
+    needs: [version, build-portable, build-fast, smoke-binary]
     runs-on: ubuntu-latest
     permissions:
       contents: write  # Needed to create the release and upload its assets
