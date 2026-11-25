@@ -1,6 +1,8 @@
 import json
 import os
 import re
+import subprocess
+import sys
 import tempfile
 from typing import Any
 
@@ -983,8 +985,44 @@ class TestErrors:
         self.mnemo_24 = self.bip39.generate(WORDS_24)
 
     def test_tracebacks_hide_locals(self) -> None:
-        """Test unexpected errors print tracebacks without local variables."""
-        assert app.pretty_exceptions_show_locals is False
+        """Test an unforeseen error's traceback leaves out the mnemonic.
+
+        Typer's traceback prints each frame's local variables unless the app
+        turns that off, and here the locals hold the mnemonic. CliRunner never
+        reaches Typer's traceback printer, so the CLI runs in a subprocess.
+        """
+        script = (
+            "import sys\n"
+            "from interstellar.cli import app\n"
+            "from interstellar.tools import BIP39\n"
+            "def fail(*args, **kwargs):\n"
+            "    raise RuntimeError('unforeseen failure')\n"
+            "BIP39.deconstruct = fail\n"
+            "app(['deconstruct', '--mnemonic', sys.argv[1]], prog_name='interstellar')\n"
+        )
+        standard = {"TYPER_STANDARD_TRACEBACK", "_TYPER_STANDARD_TRACEBACK"}
+        env = {k: v for k, v in os.environ.items() if k not in standard}
+        # Typer's own traceback, uncolored and unwrapped, so a printed local
+        # appears as one string
+        env |= {
+            "_TYPER_FORCE_DISABLE_TERMINAL": "1",
+            "TERMINAL_WIDTH": "500",
+            "PYTHONIOENCODING": "utf-8",
+        }
+
+        result = subprocess.run(
+            [sys.executable, "-c", script, self.mnemo_24],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            env=env,
+            check=False,
+        )
+
+        assert result.returncode == 1
+        assert "unforeseen failure" in result.stderr
+        # A local's value prints cut to 80 characters, so check the start
+        assert " ".join(self.mnemo_24.split()[:3]) not in result.stderr
 
     def test_invalid_thresholds(self) -> None:
         """Test thresholds SLIP39 cannot split fail before splitting."""
