@@ -48,8 +48,11 @@ def test_version(cmd: list[str]) -> None:
     assert version, "version output empty"
     assert version.startswith("v"), "version should start with 'v'"
     # CI sets EXPECTED_VERSION to the version it built, for example the tag.
-    # An empty value means CI lost that version, so the check fails on it.
+    # Under GitHub Actions it must be set, so a job that drops it fails. An
+    # empty value means CI lost that version, so the check fails on it too.
     expected = os.environ.get("EXPECTED_VERSION")
+    if os.environ.get("GITHUB_ACTIONS") == "true":
+        assert expected is not None, "EXPECTED_VERSION is unset under GitHub Actions"
     if expected is not None:
         assert expected, "EXPECTED_VERSION is set but empty"
         assert version == expected, f"version {version} != expected {expected}"
